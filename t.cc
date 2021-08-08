@@ -15,6 +15,8 @@ using namespace std;
 using open_spiel::Game;
 using open_spiel::LoadGame;
 using open_spiel::chess::ChessState;
+using open_spiel::chess::Move;
+using open_spiel::Action;
 
 int main(int argc, char * argv[]) {
   printf("Begin\n");
@@ -39,11 +41,14 @@ int main(int argc, char * argv[]) {
   std::cerr << "State:" << std::endl << state->ToString() << std::endl;
   */
   std::shared_ptr<const Game> game = LoadGame("chess");
-  ChessState initial_state(game);
-  auto shape = game->ObservationTensorShape();
-  std::vector<float> v(game->ObservationTensorSize());
-  initial_state.ObservationTensor(initial_state.CurrentPlayer(),
-                                  absl::MakeSpan(v));  
+  {
+    ChessState state(game);
+    auto shape = game->ObservationTensorShape();
+    std::vector<float> v(game->ObservationTensorSize());
+    state.ObservationTensor(state.CurrentPlayer(),
+			    absl::MakeSpan(v));
+    printf("v=%d\n", (int) v.size());
+  }
 
   int games = 0;
   while (*++argv != NULL) {
@@ -52,6 +57,9 @@ int main(int argc, char * argv[]) {
     pgn_open(&pgn, *argv);
 
     while (pgn_next_game(&pgn)) {
+      printf("\n");
+      ChessState state(game);
+      
       board_t board;      
       board_start(&board);
       char str[256];
@@ -60,8 +68,21 @@ int main(int argc, char * argv[]) {
         if (move == MoveNone || !move_is_legal(move, &board)) {
           printf("illegal move \"%s\" at line %d, column %d\n",
                    str, pgn.move_line,pgn.move_column);	  
-	  break;
+	  abort();
         }
+
+
+	absl::optional<Move> maybe_move = state.Board().ParseSANMove(str);
+	SPIEL_CHECK_TRUE(maybe_move);
+	Action action = MoveToAction(*maybe_move, state.BoardSize());
+	string foo = state.ActionToString(state.CurrentPlayer(), action);
+	state.ApplyAction(action);
+	//SPIEL_CHECK_EQ(state.Board().ToFEN(), fen_after);
+	//state.UndoAction(player, action);
+	//SPIEL_CHECK_EQ(state.Board().ToFEN(), fen);
+
+	printf("SAN: %s : %s : %s : %lld\n", str, state.Board().ToFEN().c_str(), foo.c_str(), action);
+
         move_do(&board, move);
       }
       games++;
