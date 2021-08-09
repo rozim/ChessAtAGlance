@@ -39,3 +39,37 @@ class ChessState
     Action ParseMoveToAction(const std::string& move_str) const;
 
 class ChessGame : public Game {
+
+
+## Tensorflow
+
+### RecordWriter compression
+bool IsZlibCompressed(const RecordWriterOptions& options) {
+  return options.compression_type == RecordWriterOptions::ZLIB_COMPRESSION;
+}
+
+bool IsSnappyCompressed(const RecordWriterOptions& options) {
+  return options.compression_type == RecordWriterOptions::SNAPPY_COMPRESSION;
+}
+...
+
+      io::RecordWriterOptions options;
+      options.compression_type = io::RecordWriterOptions::SNAPPY_COMPRESSION;
+      options.zlib_options.output_buffer_size = buf_size;
+
+# Building tensorflow dev
+/Users/dave/Projects/tensorflow
+bazel build  //tensorflow/tools/pip_package:build_pip_package
+
+/Library/Developer/CommandLineTools/Library/Frameworks/Python3.framework/Versions/3.8/bin/python3.8
+/System/Volumes/Data/Library/Developer/CommandLineTools/Library/Frameworks/Python3.framework/Versions/3.8/bin/python3.8
+
+bazel build  //tensorflow/core/lib/io:record_writer
+  bazel-bin/tensorflow/core/lib/io/librecord_writer.lo
+  bazel-bin/tensorflow/core/lib/io/librecord_writer.pic.lo
+  bazel-bin/tensorflow/core/lib/io/librecord_writer.so
+
+maybe need bazel build  --config=opt
+
+huge hack:
+LD_LIBRARY_PATH=/Users/dave/Projects/open_spiel/build:/Users/dave/miniforge3/lib/python3.9/site-packages/tensorflow ./t t1.pgn

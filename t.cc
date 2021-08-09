@@ -11,6 +11,12 @@
 #include "open_spiel/spiel.h"
 #include "open_spiel/spiel_utils.h"
 
+#include "tensorflow/core/lib/core/stringpiece.h"
+#include "tensorflow/core/example/example.pb.h"
+#include "tensorflow/core/example/feature.pb.h"
+#include "tensorflow/core/example/feature_util.h"
+#include "tensorflow/core/lib/io/record_writer.h"
+
 using namespace std;
 using open_spiel::Game;
 using open_spiel::LoadGame;
@@ -18,9 +24,18 @@ using open_spiel::chess::ChessState;
 using open_spiel::chess::Move;
 using open_spiel::Action;
 
+using tensorflow::Example;
+using tensorflow::io::RecordWriter;
+using tensorflow::io::RecordWriterOptions;
+using tensorflow::WritableFile;
+using tensorflow::Env;
+using tensorflow::StringPiece;
+
 int main(int argc, char * argv[]) {
   printf("Begin\n");
-  polyglot_init();  
+  polyglot_init();
+
+
   //gflags::ParseCommandLineFlags(&argc, &argv, true);  
   //google::InitGoogleLogging(argv[0]);
 
@@ -48,6 +63,27 @@ int main(int argc, char * argv[]) {
     state.ObservationTensor(state.CurrentPlayer(),
 			    absl::MakeSpan(v));
     printf("v=%d\n", (int) v.size());
+
+    Example ex;
+    ex.Clear();
+    AppendFeatureValues(v, "board", &ex);
+    printf("YES: %s\n", ex.DebugString().c_str());
+
+    Env* env = Env::Default();
+    std::unique_ptr<WritableFile> file;
+    TF_CHECK_OK(env->NewWritableFile("foo.rio", &file));
+    RecordWriter* writer = new RecordWriter(file.get(),
+					    RecordWriterOptions::CreateRecordWriterOptions("ZLIB"));
+    //string ex_out;
+
+    //StringPiece sp = ex_out;
+    //absl::Cord ex_out;
+    //std::string ex_out;
+    //CHECK(ex.SerializeToString(&ex_out));
+    //absl::Cord ex_out2 = ex_out;
+    //StringPiece ex_out;
+    TF_CHECK_OK(writer->WriteRecord(StringPiece("foo")));
+    TF_CHECK_OK(writer->Flush());
   }
 
   int games = 0;
