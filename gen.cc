@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <unistd.h>
+#include <stdlib.h>
 
 #include <memory>
 #include <string>
@@ -20,6 +21,7 @@
 #include "leveldb/status.h"
 
 #include "absl/strings/str_format.h"
+//#include "absl/random/random.h"
 
 using namespace std;
 using open_spiel::Game;
@@ -34,62 +36,37 @@ using tensorflow::Example;
 int main(int argc, char * argv[]) {
   printf("Begin\n");
   polyglot_init();
-
+  srandom(time(0L));
 
   //gflags::ParseCommandLineFlags(&argc, &argv, true);  
   //google::InitGoogleLogging(argv[0]);
 
-  /*
-  open_spiel::GameParameters params;
-  std::shared_ptr<const open_spiel::Game> game =
-    open_spiel::LoadGame("chess", params);
-
-  if (!game) {
-    std::cerr << "problem with loading game, exiting..." << std::endl;
-    return -1;
-  }
-  std::unique_ptr<open_spiel::State> state = game->NewInitialState();
-
-
-
-  std::cerr << "Initial state:" << std::endl;
-  std::cerr << "State:" << std::endl << state->ToString() << std::endl;
-  */
+  //absl::BitGen gen;
+//
+//   // Generate an integer value in the closed interval [1,6]
+//   int die_roll = absl::uniform_int_distribution<int>(1, 6)(gen);
   std::shared_ptr<const Game> game = LoadGame("chess");
-  {
-    ChessState state(game);
-    auto shape = game->ObservationTensorShape();
-    std::vector<float> v(game->ObservationTensorSize());
-    state.ObservationTensor(state.CurrentPlayer(),
-			    absl::MakeSpan(v));
-    printf("v=%d\n", (int) v.size());
 
-    Example ex;
-    ex.Clear();
-    AppendFeatureValues(v, "board", &ex);
-    printf("YES: %s\n", ex.DebugString().c_str());
+  leveldb::Options options;
+  options.create_if_missing = true;
+  string file_name = "gen.leveldb";
+  leveldb::DB* db;
+  leveldb::Status status = leveldb::DB::Open(options, file_name, &db);
+  assert(status.ok());
 
-    string ex_out;
-    ex.SerializeToString(&ex_out);
-
-    leveldb::Options options;
-    options.create_if_missing = true;
-    string file_name = "foo.leveldb";
-    leveldb::DB* db;
-    leveldb::Status status = leveldb::DB::Open(options, absl::StrFormat("tmp-%s", file_name.c_str()), &db);
-    assert(status.ok());
-
-    status = db->Put(leveldb::WriteOptions(), "a", ex_out);
-    assert(status.ok());
-
-    delete db;
-  }
+  //status = db->Put(leveldb::WriteOptions(), "a", ex_out);
+  //assert(status.ok());
 
   int games = 0;
+  long long approx_bytes = 0;
+  
   while (*++argv != NULL) {
     printf("Open %s\n", *argv);
     pgn_t pgn;
     pgn_open(&pgn, *argv);
+
+    Example ex;
+    string ex_out;
 
     while (pgn_next_game(&pgn)) {
       printf("\n");
@@ -98,7 +75,9 @@ int main(int argc, char * argv[]) {
       board_t board;      
       board_start(&board);
       char str[256];
+
       while (pgn_next_move(&pgn, str, 256)) {
+	ex.Clear();	
         int move = move_from_san(str, &board);
         if (move == MoveNone || !move_is_legal(move, &board)) {
           printf("illegal move \"%s\" at line %d, column %d\n",
@@ -106,17 +85,34 @@ int main(int argc, char * argv[]) {
 	  abort();
         }
 
-
 	absl::optional<Move> maybe_move = state.Board().ParseSANMove(str);
 	SPIEL_CHECK_TRUE(maybe_move);
 	Action action = MoveToAction(*maybe_move, state.BoardSize());
-	string foo = state.ActionToString(state.CurrentPlayer(), action);
+
+	std::vector<float> v(game->ObservationTensorSize());
+	state.ObservationTensor(state.CurrentPlayer(),
+				absl::MakeSpan(v));
+	string action2s = state.ActionToString(state.CurrentPlayer(), action);
+	AppendFeatureValues(v, "board", &ex);
+	AppendFeatureValues(absl::StrFormat("%ldd", action), "label", &ex); 	
+	AppendFeatureValues(action2s, "action", &ex); 
+	AppendFeatureValues(state.Board().ToFEN(), "fen", &ex);
+
+	approx_bytes += v.size() + 4 + 4 + 4 + 32;
+	
+	ex_out.clear();
+	ex.SerializeToString(&ex_out);
+	db->Put(leveldb::WriteOptions(),
+		//absl::StrFormat("%d", absl::uniform_int_distribution<int>()(gen)),
+		absl::StrFormat("%ld", random()),
+		ex_out);
+
 	state.ApplyAction(action);
 	//SPIEL_CHECK_EQ(state.Board().ToFEN(), fen_after);
 	//state.UndoAction(player, action);
 	//SPIEL_CHECK_EQ(state.Board().ToFEN(), fen);
 
-	printf("SAN: %s : %s : %s : %lld\n", str, state.Board().ToFEN().c_str(), foo.c_str(), action);
+	//printf("SAN: %s : %s : %s : %lld\n", str, state.Board().ToFEN().c_str(), foo.c_str(), action);
 
         move_do(&board, move);
       }
@@ -126,4 +122,7 @@ int main(int argc, char * argv[]) {
   }
   
   printf("All done, games=%d\n", games);
+  delete db;
+  printf("All done");
+  printf("Approx bytes: %lld\n", approx_bytes);
 }

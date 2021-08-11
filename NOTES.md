@@ -73,3 +73,16 @@ maybe need bazel build  --config=opt
 
 huge hack:
 LD_LIBRARY_PATH=/Users/dave/Projects/open_spiel/build:/Users/dave/miniforge3/lib/python3.9/site-packages/tensorflow ./t t1.pgn
+
+Open Spiel + Tensorflow C++ issues
+https://github.com/deepmind/open_spiel/issues/172
+https://github.com/deepmind/open_spiel/pull/307
+
+riegeli: PITA, may be obsolete?
+
+-----
+
+g++ -std=c++17 -L/usr/local/lib -lleveldb t2.cc -o t2
+
+-----
+LD_LIBRARY_PATH=/Users/dave/Projects/open_spiel/build:/Users/dave/miniforge3/lib/python3.9/site-packages/tensorflow ./gen t1.pgn
