@@ -34,3 +34,4 @@
 local.mk
 *~
 shh
+*.leveldb
