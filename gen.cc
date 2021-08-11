@@ -11,6 +11,7 @@
 #include "open_spiel/games/chess/chess_board.h"
 #include "open_spiel/spiel.h"
 #include "open_spiel/spiel_utils.h"
+#include "open_spiel/spiel_globals.h"
 
 #include "tensorflow/core/lib/core/stringpiece.h"
 #include "tensorflow/core/example/example.pb.h"
@@ -34,6 +35,7 @@ using tensorflow::Example;
 
 
 int main(int argc, char * argv[]) {
+  time_t t1 = time(0L);
   printf("Begin\n");
   polyglot_init();
   srandom(time(0L));
@@ -41,10 +43,6 @@ int main(int argc, char * argv[]) {
   //gflags::ParseCommandLineFlags(&argc, &argv, true);  
   //google::InitGoogleLogging(argv[0]);
 
-  //absl::BitGen gen;
-//
-//   // Generate an integer value in the closed interval [1,6]
-//   int die_roll = absl::uniform_int_distribution<int>(1, 6)(gen);
   std::shared_ptr<const Game> game = LoadGame("chess");
 
   leveldb::Options options;
@@ -54,10 +52,7 @@ int main(int argc, char * argv[]) {
   leveldb::Status status = leveldb::DB::Open(options, file_name, &db);
   assert(status.ok());
 
-  //status = db->Put(leveldb::WriteOptions(), "a", ex_out);
-  //assert(status.ok());
-
-  int games = 0;
+  int games = -1;
   long long approx_bytes = 0;
   
   while (*++argv != NULL) {
@@ -67,9 +62,18 @@ int main(int argc, char * argv[]) {
 
     Example ex;
     string ex_out;
-
+    long mod = 1;
     while (pgn_next_game(&pgn)) {
-      printf("\n");
+      if (games % mod == 0) {
+	time_t el = time(0L) - t1;
+	if (el == 0) {
+	  el = 1;
+	}
+	printf("game: %d [%s | %s] %ld (s), %ld (gps)\n", games, pgn.white, pgn.black, el, games/el);
+
+	mod *= 2;
+      }
+      games++;
       ChessState state(game);
       
       board_t board;      
@@ -77,6 +81,10 @@ int main(int argc, char * argv[]) {
       char str[256];
 
       while (pgn_next_move(&pgn, str, 256)) {
+	if (state.CurrentPlayer() < 0) { // maybe draw by rep recognized by spiel
+	  continue; // read thru moves 
+	}
+	
 	ex.Clear();	
         int move = move_from_san(str, &board);
         if (move == MoveNone || !move_is_legal(move, &board)) {
@@ -103,26 +111,19 @@ int main(int argc, char * argv[]) {
 	ex_out.clear();
 	ex.SerializeToString(&ex_out);
 	db->Put(leveldb::WriteOptions(),
-		//absl::StrFormat("%d", absl::uniform_int_distribution<int>()(gen)),
 		absl::StrFormat("%ld", random()),
 		ex_out);
 
 	state.ApplyAction(action);
-	//SPIEL_CHECK_EQ(state.Board().ToFEN(), fen_after);
-	//state.UndoAction(player, action);
-	//SPIEL_CHECK_EQ(state.Board().ToFEN(), fen);
-
-	//printf("SAN: %s : %s : %s : %lld\n", str, state.Board().ToFEN().c_str(), foo.c_str(), action);
-
         move_do(&board, move);
       }
-      games++;
     }
     pgn_close(&pgn);    
   }
   
   printf("All done, games=%d\n", games);
   delete db;
-  printf("All done");
+
   printf("Approx bytes: %lld\n", approx_bytes);
+  printf("All done after %ld\n", time(0L) - t1);
 }
