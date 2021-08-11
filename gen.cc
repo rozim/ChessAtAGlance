@@ -113,11 +113,13 @@ int main(int argc, char * argv[]) {
 				  absl::MakeSpan(v));
 	  string action2s = state.ActionToString(state.CurrentPlayer(), action);
 	  AppendFeatureValues(v, "board", &ex);
-	  AppendFeatureValues(absl::StrFormat("%ldd", action), "label", &ex); 	
-	  AppendFeatureValues(action2s, "action", &ex); 
-	  AppendFeatureValues(state.Board().ToFEN(), "fen", &ex);
-
-	  approx_bytes += v.size() + 4 + 4 + 4 + 32;
+	  AppendFeatureValues({action}, "label", &ex); 
+	  AppendFeatureValues({action2s}, "action", &ex); 
+	  AppendFeatureValues({state.Board().ToFEN()}, "fen", &ex);
+	  AppendFeatureValues({maybe_move->ToLAN()}, "lan", &ex); 	  
+	  //printf("%s\n", ex.DebugString().c_str());
+	  //exit(0);
+	  approx_bytes += v.size() + 4 + 4 + 4 + 4 + 32;
 	
 	  ex_out.clear();
 	  ex.SerializeToString(&ex_out);
