@@ -24,6 +24,9 @@
 #include "absl/strings/str_format.h"
 //#include "absl/random/random.h"
 
+#include "absl/container/flat_hash_set.h"
+#include "absl/numeric/int128.h"
+
 using namespace std;
 using open_spiel::Game;
 using open_spiel::LoadGame;
@@ -35,6 +38,7 @@ using tensorflow::Example;
 
 
 int main(int argc, char * argv[]) {
+  absl::flat_hash_set<absl::uint128> mega;
   time_t t1 = time(0L);
   printf("Begin\n");
   polyglot_init();
@@ -52,7 +56,8 @@ int main(int argc, char * argv[]) {
   leveldb::Status status = leveldb::DB::Open(options, file_name, &db);
   assert(status.ok());
 
-  int games = -1;
+  long games = -1;
+  long dups = 0;
   long long approx_bytes = 0;
   
   while (*++argv != NULL) {
@@ -69,9 +74,13 @@ int main(int argc, char * argv[]) {
 	if (el == 0) {
 	  el = 1;
 	}
-	printf("game: %d [%s | %s] %ld (s), %ld (gps)\n", games, pgn.white, pgn.black, el, games/el);
+	printf("game: %ld [%s | %s] | write=%ld dup=%ld | %ld (s), %ld (gps)\n", games, pgn.white, pgn.black,
+	       mega.size(),
+	       dups,
+	       el, games/el);
 
 	mod *= 2;
+	if (mod > 5000) { mod = 5000; }
       }
       games++;
       ChessState state(game);
@@ -97,22 +106,27 @@ int main(int argc, char * argv[]) {
 	SPIEL_CHECK_TRUE(maybe_move);
 	Action action = MoveToAction(*maybe_move, state.BoardSize());
 
-	std::vector<float> v(game->ObservationTensorSize());
-	state.ObservationTensor(state.CurrentPlayer(),
-				absl::MakeSpan(v));
-	string action2s = state.ActionToString(state.CurrentPlayer(), action);
-	AppendFeatureValues(v, "board", &ex);
-	AppendFeatureValues(absl::StrFormat("%ldd", action), "label", &ex); 	
-	AppendFeatureValues(action2s, "action", &ex); 
-	AppendFeatureValues(state.Board().ToFEN(), "fen", &ex);
+	absl::uint128 key = absl::MakeUint128(state.Board().HashValue(), action);
+	if (mega.insert(key).second) {
+	  std::vector<float> v(game->ObservationTensorSize());
+	  state.ObservationTensor(state.CurrentPlayer(),
+				  absl::MakeSpan(v));
+	  string action2s = state.ActionToString(state.CurrentPlayer(), action);
+	  AppendFeatureValues(v, "board", &ex);
+	  AppendFeatureValues(absl::StrFormat("%ldd", action), "label", &ex); 	
+	  AppendFeatureValues(action2s, "action", &ex); 
+	  AppendFeatureValues(state.Board().ToFEN(), "fen", &ex);
 
-	approx_bytes += v.size() + 4 + 4 + 4 + 32;
+	  approx_bytes += v.size() + 4 + 4 + 4 + 32;
 	
-	ex_out.clear();
-	ex.SerializeToString(&ex_out);
-	db->Put(leveldb::WriteOptions(),
-		absl::StrFormat("%ld", random()),
-		ex_out);
+	  ex_out.clear();
+	  ex.SerializeToString(&ex_out);
+	  db->Put(leveldb::WriteOptions(),
+		  absl::StrFormat("%ld", random()),
+		  ex_out);
+	} else {
+	  dups++;
+	}
 
 	state.ApplyAction(action);
         move_do(&board, move);
@@ -121,7 +135,7 @@ int main(int argc, char * argv[]) {
     pgn_close(&pgn);    
   }
   
-  printf("All done, games=%d\n", games);
+  printf("All done, games=%ld\n", games);
   delete db;
 
   printf("Approx bytes: %lld\n", approx_bytes);
