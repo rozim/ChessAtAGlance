@@ -52,8 +52,9 @@ int main(int argc, char * argv[]) {
   leveldb::Options options;
   options.create_if_missing = true;
   options.write_buffer_size = 32 * 1024 * 1024;
-  options.block_size = 32 * 1024;
+  options.block_size = 4 * 1024 * 1024;
   options.max_file_size = 16 * 1024 * 1024;
+
   string file_name = "gen.leveldb";
   leveldb::DB* db;
   leveldb::Status status = leveldb::DB::Open(options, file_name, &db);
