@@ -86,3 +86,25 @@ g++ -std=c++17 -L/usr/local/lib -lleveldb t2.cc -o t2
 
 -----
 LD_LIBRARY_PATH=/Users/dave/Projects/open_spiel/build:/Users/dave/miniforge3/lib/python3.9/site-packages/tensorflow ./gen t1.pgn
+
+-----
+ex = tf.train.Example().FromString(ent[1])
+
+-----
+inline constexpr int NumDistinctActions() { return 4672; }
+inline const std::vector<int>& ObservationTensorShape() {
+  static std::vector<int> shape{
+      13 /* piece types * colours + empty */ + 1 /* repetition count */ +
+          1 /* side to move */ + 1 /* irreversible move counter */ +
+          4 /* castling rights */,
+      kMaxBoardSize, kMaxBoardSize};
+  return shape;
+}
+20 * 64 = 1280
+
+feature_spec = { 'board': tf.io.FixedLenFeature([1280], tf.float32)}
+
+ent = next(db.RangeIter())
+ex = tf.train.Example().FromString(ent[1])
+foo = ex.features.feature['board'].float_list.value
+tf.convert_to_tensor(foo)

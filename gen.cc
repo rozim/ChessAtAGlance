@@ -4,6 +4,7 @@
 
 #include <memory>
 #include <string>
+#include <vector>
 
 #include "polyglot_lib.h"
 
@@ -22,6 +23,7 @@
 #include "leveldb/status.h"
 
 #include "absl/strings/str_format.h"
+#include "absl/strings/str_cat.h"
 //#include "absl/random/random.h"
 
 #include "absl/container/flat_hash_set.h"
@@ -44,28 +46,33 @@ int main(int argc, char * argv[]) {
   polyglot_init();
   srandom(time(0L));
 
-  //gflags::ParseCommandLineFlags(&argc, &argv, true);  
+  //gflags::ParseCommandLineFlags(&argc, &argv, true);
   //google::InitGoogleLogging(argv[0]);
 
   std::shared_ptr<const Game> game = LoadGame("chess");
 
   leveldb::Options options;
   options.create_if_missing = true;
+  options.error_if_exists = true;
   options.write_buffer_size = 32 * 1024 * 1024;
   options.block_size = 4 * 1024 * 1024;
   options.max_file_size = 16 * 1024 * 1024;
 
-  string file_name = "gen.leveldb";
-  leveldb::DB* db;
-  leveldb::Status status = leveldb::DB::Open(options, file_name, &db);
-  assert(status.ok());
+  std::vector<leveldb::DB*> dbs;
+  for (int i = 0; i < 10; i++) {
+    string file_name = absl::StrFormat("mega-%d.leveldb", i);
+    leveldb::DB* db;
+    leveldb::Status status = leveldb::DB::Open(options, file_name, &db);
+    dbs.push_back(db);
+    assert(status.ok());
+  }
 
   long games = -1;
   long dups = 0;
   long long approx_bytes = 0;
-  
+
   while (*++argv != NULL) {
-    printf("Open %s\n", *argv);
+    printf("Open %s | %ld (s)\n", *argv, time(0L) - t1);
     pgn_t pgn;
     pgn_open(&pgn, *argv);
 
@@ -73,6 +80,7 @@ int main(int argc, char * argv[]) {
     string ex_out;
     long mod = 1;
     while (pgn_next_game(&pgn)) {
+      games++; 
       if (games % mod == 0) {
 	time_t el = time(0L) - t1;
 	if (el == 0) {
@@ -86,23 +94,23 @@ int main(int argc, char * argv[]) {
 	mod *= 2;
 	if (mod > 5000) { mod = 5000; }
       }
-      games++;
+
       ChessState state(game);
-      
-      board_t board;      
+
+      board_t board;
       board_start(&board);
       char str[256];
 
       while (pgn_next_move(&pgn, str, 256)) {
 	if (state.CurrentPlayer() < 0) { // maybe draw by rep recognized by spiel
-	  continue; // read thru moves 
+	  continue; // read thru moves
 	}
-	
-	ex.Clear();	
+
+	ex.Clear();
         int move = move_from_san(str, &board);
         if (move == MoveNone || !move_is_legal(move, &board)) {
           printf("illegal move \"%s\" at line %d, column %d\n",
-                   str, pgn.move_line,pgn.move_column);	  
+                   str, pgn.move_line,pgn.move_column);
 	  abort();
         }
 
@@ -111,25 +119,27 @@ int main(int argc, char * argv[]) {
 	Action action = MoveToAction(*maybe_move, state.BoardSize());
 
 	absl::uint128 key = absl::MakeUint128(state.Board().HashValue(), action);
+	string skey = absl::StrFormat("%lx%lx", Uint128High64(key), Uint128Low64(key));
+
 	if (mega.insert(key).second) {
 	  std::vector<float> v(game->ObservationTensorSize());
 	  state.ObservationTensor(state.CurrentPlayer(),
 				  absl::MakeSpan(v));
 	  string action2s = state.ActionToString(state.CurrentPlayer(), action);
 	  AppendFeatureValues(v, "board", &ex);
-	  AppendFeatureValues({action}, "label", &ex); 
-	  AppendFeatureValues({action2s}, "action", &ex); 
+	  AppendFeatureValues({action}, "label", &ex);
+	  AppendFeatureValues({action2s}, "san", &ex);
+	  AppendFeatureValues({maybe_move->ToLAN()}, "lan", &ex);	  
 	  AppendFeatureValues({state.Board().ToFEN()}, "fen", &ex);
-	  AppendFeatureValues({maybe_move->ToLAN()}, "lan", &ex); 	  
 	  //printf("%s\n", ex.DebugString().c_str());
 	  //exit(0);
 	  approx_bytes += v.size() + 4 + 4 + 4 + 4 + 32;
-	
+
 	  ex_out.clear();
 	  ex.SerializeToString(&ex_out);
-	  db->Put(leveldb::WriteOptions(),
-		  absl::StrFormat("%ld", random()),
-		  ex_out);
+	  dbs[random() % 10]->Put(leveldb::WriteOptions(),
+				  skey,
+				  ex_out);
 	} else {
 	  dups++;
 	}
@@ -138,11 +148,14 @@ int main(int argc, char * argv[]) {
         move_do(&board, move);
       }
     }
-    pgn_close(&pgn);    
+    pgn_close(&pgn);
   }
-  
+
   printf("All done, games=%ld\n", games);
-  delete db;
+  for (int i = 0; i < 10; i++) {
+    printf("Close %d | %ld (s)\n", i, time(0L) - t1);
+    delete dbs[i];
+  }
 
   printf("Approx bytes: %lld\n", approx_bytes);
   printf("All done after %ld\n", time(0L) - t1);

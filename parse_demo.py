@@ -1,6 +1,15 @@
 import sys
 import tensorflow as tf
 import leveldb
+import snappy
+
+db = leveldb.LevelDB('gen.leveldb')
+ent = next(db.RangeIter())
+print(type(ent[1]))
+print(len(ent[1]))
+print(len(snappy.compress(ent[1])))
+print(db.GetStats())
+sys.exit(0)
 
 # db = leveldb.LevelDB('gen.leveldb')
 
