@@ -3,13 +3,13 @@ import tensorflow as tf
 import leveldb
 import snappy
 
-db = leveldb.LevelDB('gen.leveldb')
-ent = next(db.RangeIter())
-print(type(ent[1]))
-print(len(ent[1]))
-print(len(snappy.compress(ent[1])))
-print(db.GetStats())
-sys.exit(0)
+# db = leveldb.LevelDB('mega-v2-1.leveldb')
+# ent = next(db.RangeIter())
+# print(type(ent[1]))
+# print(len(ent[1]))
+# print(len(snappy.compress(ent[1])))
+# print(db.GetStats())
+# sys.exit(0)
 
 # db = leveldb.LevelDB('gen.leveldb')
 
@@ -32,7 +32,7 @@ sys.exit(0)
 # print(tf.convert_to_tensor(foo))
 
 def gen():
-  db = leveldb.LevelDB('gen.leveldb')
+  db = leveldb.LevelDB('mega-v2-1.leveldb') 
   for ent in db.RangeIter():
     ex = tf.train.Example().FromString(ent[1])
     #print(ex)
