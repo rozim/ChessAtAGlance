@@ -29,7 +29,7 @@ from tensorflow import keras
 from tensorflow.keras import layers
 from tensorflow.keras import regularizers
 from tensorflow.keras.callbacks import TerminateOnNaN, EarlyStopping, ModelCheckpoint, LambdaCallback, Callback
-from tensorflow.keras.layers import BatchNormalization, LayerNormalization, Flatten, Add
+from tensorflow.keras.layers import BatchNormalization, LayerNormalization, Flatten, Add, Conv2D
 from tensorflow.keras.layers import Dense, Dropout, Input, Embedding, Concatenate, Activation
 from tensorflow.keras.layers import GaussianNoise, LeakyReLU, Softmax
 from tensorflow.keras.layers.experimental.preprocessing import IntegerLookup, Discretization
@@ -74,6 +74,42 @@ class LogLrCallback(Callback):
     logs['lr'] = backend.get_value(self.model.optimizer.lr(epoch))
 
 
+def create_model():
+  kernel_regularizer = regularizers.l2(1e-5)
+  data_format = 'channels_last'
+  nf = 64
+  my_conv2d = functools.partial(
+    Conv2D,
+    filters=nf,
+    kernel_size=(3, 3),
+    kernel_regularizer=kernel_regularizer,
+    data_format=data_format,
+    padding='same',
+    use_bias=False)
+
+  board = Input(shape=BOARD_SHAPE, dtype='float32')
+  x = board
+  x = my_conv2d()(x)
+  x = my_conv2d()(x)
+  x = my_conv2d()(x)  
+  x = Flatten()(x)
+  x = Dense(4096, activation='relu')(x)
+  x = Dense(NUM_CLASSES, name='logits', activation=None)(x)
+  return Model(inputs=[board], outputs=x)
+
+
+def create_input_generator(fn, shuffle):
+  gen1 = functools.partial(gen, fn)
+  ds1 = tf.data.Dataset.from_generator(gen1,
+                                      output_types=('float32', 'int64'),
+                                      output_shapes=(BOARD_SHAPE, []))
+  ds1 = ds1.shuffle(1024)
+  ds1 = ds1.repeat()
+  ds1 = ds1.batch(128)
+  ds1 = ds1.prefetch(2)
+  return ds1
+
+
 def main(_argv):
   tf.compat.v1.logging.set_verbosity(tf.compat.v1.logging.ERROR)
   os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
@@ -92,13 +128,7 @@ def main(_argv):
   ds2 = ds2.repeat()
   ds2 = ds2.batch(128)
 
-  kernel_regularizer = regularizers.l2(1e-5)
-  board = Input(shape=BOARD_SHAPE, dtype='float32')
-  x = board
-  x = Flatten()(x)
-  x = Dense(4096, activation='relu')(x)
-  x = Dense(NUM_CLASSES, name='logits', activation=None)(x)
-  m = Model(inputs=[board], outputs=x)
+  m = create_model()
   m.summary()
   with open('last-model.txt', 'w') as f:
     with redirect_stdout(f):
