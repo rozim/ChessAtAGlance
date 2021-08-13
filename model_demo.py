@@ -29,7 +29,7 @@ from tensorflow import keras
 from tensorflow.keras import layers
 from tensorflow.keras import regularizers
 from tensorflow.keras.callbacks import TerminateOnNaN, EarlyStopping, ModelCheckpoint, LambdaCallback, Callback
-from tensorflow.keras.layers import BatchNormalization, LayerNormalization, Flatten, Add, Conv2D
+from tensorflow.keras.layers import BatchNormalization, LayerNormalization, Flatten, Add, Conv2D, Permute
 from tensorflow.keras.layers import Dense, Dropout, Input, Embedding, Concatenate, Activation
 from tensorflow.keras.layers import GaussianNoise, LeakyReLU, Softmax
 from tensorflow.keras.layers.experimental.preprocessing import IntegerLookup, Discretization
@@ -50,11 +50,11 @@ BOARD_FLOATS = 1280
 def df_to_csv(df, fn, float_format='%6.4f'):
   df.to_csv(fn, index=False, float_format=float_format)
 
-  
+
 class objdict(dict):
   def __getattr__(self, name):
     assert name in self, (name, self.keys())
-    return self[name]  
+    return self[name]
 
 
 def gen(fn):
@@ -89,11 +89,18 @@ def create_model():
 
   board = Input(shape=BOARD_SHAPE, dtype='float32')
   x = board
+  # in: bs, chan, x, y
+  #         20    8, 8
+  #     0   1     2  3
+  x = Permute([2, 3, 1])(x)
+  # out: bs, x, y, chan
+  #          8, 8, 20
+
   x = my_conv2d()(x)
   x = my_conv2d()(x)
-  x = my_conv2d()(x)  
+  x = my_conv2d()(x)
   x = Flatten()(x)
-  x = Dense(4096, activation='relu')(x)
+  x = Dense(1024, activation='relu')(x)
   x = Dense(NUM_CLASSES, name='logits', activation=None)(x)
   return Model(inputs=[board], outputs=x)
 
