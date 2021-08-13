@@ -33,16 +33,21 @@ from tensorflow.keras.layers import BatchNormalization, LayerNormalization, Flat
 from tensorflow.keras.layers import Dense, Dropout, Input, Embedding, Concatenate, Activation
 from tensorflow.keras.layers import GaussianNoise, LeakyReLU, Softmax
 from tensorflow.keras.layers.experimental.preprocessing import IntegerLookup, Discretization
-from tensorflow.keras.losses import BinaryCrossentropy as Loss_BCE
+from tensorflow.keras.losses import SparseCategoricalCrossentropy
+
 from tensorflow.keras.metrics import AUC
-from tensorflow.keras.metrics import BinaryCrossentropy as Metric_BCE
 from tensorflow.keras.models import Model
 from tensorflow.keras.optimizers import Adam, Ftrl
 from tensorflow.keras.optimizers.schedules import CosineDecayRestarts
 from tensorflow.python.keras import backend
+import pandas as pd
 
 
 NUM_CLASSES = 4672
+
+def df_to_csv(df, fn, float_format='%6.4f'):
+  df.to_csv(fn, index=False, float_format=float_format)
+
 
 def gen(fn):
   db = leveldb.LevelDB(fn)
@@ -54,9 +59,18 @@ def gen(fn):
                                  dtype=tf.int64)
     yield (board, action)
 
+
+class LogLrCallback(Callback):
+  def on_epoch_end(self, epoch, logs):
+    logs['lr'] = backend.get_value(self.model.optimizer.lr(epoch))
+
+
 def main(_argv):
+  tf.compat.v1.logging.set_verbosity(tf.compat.v1.logging.ERROR)
+  os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
+
   gen1 = functools.partial(gen, 'mega-v2-1.leveldb')
-  gen2 = functools.partial(gen, 'mega-v2-2.leveldb')  
+  gen2 = functools.partial(gen, 'mega-v2-2.leveldb')
   ds1 = tf.data.Dataset.from_generator(gen1,
                                       output_types=('float32', 'int64'),
                                       output_shapes=([1280,], []))
@@ -67,29 +81,43 @@ def main(_argv):
                                       output_types=('float32', 'int64'),
                                       output_shapes=([1280,], []))
   ds2 = ds2.repeat()
-  ds2 = ds2.batch(128)  
+  ds2 = ds2.batch(128)
 
-  board = Input(shape=(1280,), dtype='float32')  
+  kernel_regularizer = regularizers.l2(1e-5)
+  board = Input(shape=(1280,), dtype='float32')
   x = board
   x = Dense(4096, activation='relu')(x)
-  #x = Dense(2048, activation='relu')(x)    
-  #x = Dense(1024, activation='relu')(x)
   x = Dense(NUM_CLASSES, name='logits', activation=None)(x)
-  x = Softmax()(x)
   m = Model(inputs=[board], outputs=x)
   m.summary()
+  with open('last-model.txt', 'w') as f:
+    with redirect_stdout(f):
+      m.summary()
 
-  m.compile(optimizer=Adam(learning_rate=0.001), loss='sparse_categorical_crossentropy', metrics=[
-    #'categorical_accuracy',
-                                                                                           'accuracy'])
-  m.fit(x=ds1,
-        epochs=100,
-        steps_per_epoch=256,
-        validation_data=ds2,
-        validation_steps=64)
+  lr = CosineDecayRestarts(initial_learning_rate=0.001,
+                           first_decay_steps=5,
+                           t_mul=1,
+                           m_mul=1,
+                           alpha=0.10)
+  m.compile(optimizer=Adam(learning_rate=lr),
+            loss=SparseCategoricalCrossentropy(from_logits=True),
+            metrics=['accuracy'])
+  callbacks = [TerminateOnNaN(),
+               LogLrCallback()]
+  history = m.fit(x=ds1,
+                  epochs=25,
+                  steps_per_epoch=256,
+                  validation_data=ds2,
+                  validation_steps=64,
+                  callbacks=callbacks)
   print('all done')
+  df = pd.DataFrame(history.history)
+  df_to_csv(df, 'last.csv')
+
+
+
   # print('predict: ', m.predict(ds.take(1)))
 
 
 if __name__ == '__main__':
-  app.run(main)  
+  app.run(main)
