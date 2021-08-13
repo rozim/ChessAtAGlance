@@ -22,9 +22,9 @@
 #include "leveldb/db.h"
 #include "leveldb/status.h"
 
+#include "absl/hash/hash.h"
 #include "absl/strings/str_format.h"
 #include "absl/strings/str_cat.h"
-//#include "absl/random/random.h"
 
 #include "absl/container/flat_hash_set.h"
 #include "absl/numeric/int128.h"
@@ -60,7 +60,7 @@ int main(int argc, char * argv[]) {
 
   std::vector<leveldb::DB*> dbs;
   for (int i = 0; i < 10; i++) {
-    string file_name = absl::StrFormat("mega-%d.leveldb", i);
+    string file_name = absl::StrFormat("mega-v2-%d.leveldb", i);
     leveldb::DB* db;
     leveldb::Status status = leveldb::DB::Open(options, file_name, &db);
     dbs.push_back(db);
@@ -119,7 +119,8 @@ int main(int argc, char * argv[]) {
 	Action action = MoveToAction(*maybe_move, state.BoardSize());
 
 	absl::uint128 key = absl::MakeUint128(state.Board().HashValue(), action);
-	string skey = absl::StrFormat("%lx%lx", Uint128High64(key), Uint128Low64(key));
+
+
 
 	if (mega.insert(key).second) {
 	  std::vector<float> v(game->ObservationTensorSize());
@@ -131,12 +132,15 @@ int main(int argc, char * argv[]) {
 	  AppendFeatureValues({action2s}, "san", &ex);
 	  AppendFeatureValues({maybe_move->ToLAN()}, "lan", &ex);	  
 	  AppendFeatureValues({state.Board().ToFEN()}, "fen", &ex);
-	  //printf("%s\n", ex.DebugString().c_str());
-	  //exit(0);
 	  approx_bytes += v.size() + 4 + 4 + 4 + 4 + 32;
 
 	  ex_out.clear();
 	  ex.SerializeToString(&ex_out);
+
+	  // Mix up bits to address the unproven concern about
+	  // 'skey' in leveldb having patterns based on state.Board().HashValue().
+	  key = absl::Hash<absl::uint128>{}(key); 	  
+	  string skey = absl::StrFormat("%016llx" "%016llx",  Uint128High64(key), Uint128Low64(key)); 
 	  dbs[random() % 10]->Put(leveldb::WriteOptions(),
 				  skey,
 				  ex_out);
