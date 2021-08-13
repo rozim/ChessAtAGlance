@@ -60,16 +60,20 @@ def main(_argv):
   ds1 = tf.data.Dataset.from_generator(gen1,
                                       output_types=('float32', 'int64'),
                                       output_shapes=([1280,], []))
+  ds1 = ds1.repeat()
   ds1 = ds1.batch(128)
 
   ds2 = tf.data.Dataset.from_generator(gen2,
                                       output_types=('float32', 'int64'),
                                       output_shapes=([1280,], []))
+  ds2 = ds2.repeat()
   ds2 = ds2.batch(128)  
 
   board = Input(shape=(1280,), dtype='float32')  
   x = board
-  x = Dense(1024, activation='relu')(x)
+  x = Dense(4096, activation='relu')(x)
+  #x = Dense(2048, activation='relu')(x)    
+  #x = Dense(1024, activation='relu')(x)
   x = Dense(NUM_CLASSES, name='logits', activation=None)(x)
   x = Softmax()(x)
   m = Model(inputs=[board], outputs=x)
@@ -79,10 +83,10 @@ def main(_argv):
     #'categorical_accuracy',
                                                                                            'accuracy'])
   m.fit(x=ds1,
-        epochs=10,
-        steps_per_epoch=64,
+        epochs=100,
+        steps_per_epoch=256,
         validation_data=ds2,
-        validation_steps=16)
+        validation_steps=64)
   print('all done')
   # print('predict: ', m.predict(ds.take(1)))
 
