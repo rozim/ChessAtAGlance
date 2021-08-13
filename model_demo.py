@@ -44,8 +44,8 @@ from tensorflow.python.keras import backend
 
 NUM_CLASSES = 4672
 
-def gen():
-  db = leveldb.LevelDB('mega-v2-1.leveldb') 
+def gen(fn):
+  db = leveldb.LevelDB(fn)
   for ent in db.RangeIter():
     ex = tf.train.Example().FromString(ent[1])
     board = tf.convert_to_tensor(ex.features.feature['board'].float_list.value,
@@ -54,28 +54,37 @@ def gen():
                                  dtype=tf.int64)
     yield (board, action)
 
-
-
 def main(_argv):
-  ds = tf.data.Dataset.from_generator(gen,
+  gen1 = functools.partial(gen, 'mega-v2-1.leveldb')
+  gen2 = functools.partial(gen, 'mega-v2-2.leveldb')  
+  ds1 = tf.data.Dataset.from_generator(gen1,
                                       output_types=('float32', 'int64'),
                                       output_shapes=([1280,], []))
-  ds = ds.batch(3)
+  ds1 = ds1.batch(128)
 
-
+  ds2 = tf.data.Dataset.from_generator(gen2,
+                                      output_types=('float32', 'int64'),
+                                      output_shapes=([1280,], []))
+  ds2 = ds2.batch(128)  
 
   board = Input(shape=(1280,), dtype='float32')  
   x = board
-  x = Dense(NUM_CLASSES, name='logits', activation='softmax')(x)
+  x = Dense(1024, activation='relu')(x)
+  x = Dense(NUM_CLASSES, name='logits', activation=None)(x)
+  x = Softmax()(x)
   m = Model(inputs=[board], outputs=x)
   m.summary()
 
   m.compile(optimizer=Adam(learning_rate=0.001), loss='sparse_categorical_crossentropy', metrics=[
+    #'categorical_accuracy',
                                                                                            'accuracy'])
-  m.fit(x=ds,
-        epochs=1,
-        steps_per_epoch=2)
-
+  m.fit(x=ds1,
+        epochs=10,
+        steps_per_epoch=64,
+        validation_data=ds2,
+        validation_steps=16)
+  print('all done')
+  # print('predict: ', m.predict(ds.take(1)))
 
 
 if __name__ == '__main__':
