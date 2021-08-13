@@ -44,9 +44,17 @@ import pandas as pd
 
 
 NUM_CLASSES = 4672
+BOARD_SHAPE = (20, 8, 8)
+BOARD_FLOATS = 1280
 
 def df_to_csv(df, fn, float_format='%6.4f'):
   df.to_csv(fn, index=False, float_format=float_format)
+
+  
+class objdict(dict):
+  def __getattr__(self, name):
+    assert name in self, (name, self.keys())
+    return self[name]  
 
 
 def gen(fn):
@@ -55,6 +63,7 @@ def gen(fn):
     ex = tf.train.Example().FromString(ent[1])
     board = tf.convert_to_tensor(ex.features.feature['board'].float_list.value,
                                  dtype=tf.float32)
+    board = tf.reshape(board, BOARD_SHAPE)
     action = tf.convert_to_tensor(ex.features.feature['label'].int64_list.value[0],
                                  dtype=tf.int64)
     yield (board, action)
@@ -73,19 +82,20 @@ def main(_argv):
   gen2 = functools.partial(gen, 'mega-v2-2.leveldb')
   ds1 = tf.data.Dataset.from_generator(gen1,
                                       output_types=('float32', 'int64'),
-                                      output_shapes=([1280,], []))
+                                      output_shapes=(BOARD_SHAPE, []))
   ds1 = ds1.repeat()
   ds1 = ds1.batch(128)
 
   ds2 = tf.data.Dataset.from_generator(gen2,
                                       output_types=('float32', 'int64'),
-                                      output_shapes=([1280,], []))
+                                      output_shapes=(BOARD_SHAPE, []))
   ds2 = ds2.repeat()
   ds2 = ds2.batch(128)
 
   kernel_regularizer = regularizers.l2(1e-5)
-  board = Input(shape=(1280,), dtype='float32')
+  board = Input(shape=BOARD_SHAPE, dtype='float32')
   x = board
+  x = Flatten()(x)
   x = Dense(4096, activation='relu')(x)
   x = Dense(NUM_CLASSES, name='logits', activation=None)(x)
   m = Model(inputs=[board], outputs=x)
