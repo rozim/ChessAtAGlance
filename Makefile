@@ -27,10 +27,13 @@ LDFLAGS += -L/Users/dave/miniforge3/lib/python3.9/site-packages/tensorflow -lten
 LDFLAGS += -L/opt/homebrew/lib
 LDFLAGS += -lleveldb
 
-all : t gen
+all : t gen leveldb_read
 
 t : t.o
 	${LD} t.o ${LDFLAGS} -o ${@}
 
 gen : gen.o
 	${LD} gen.o ${LDFLAGS} -o ${@}
+
+leveldb_read : leveldb_read.o
+	${LD} leveldb_read.o ${LDFLAGS} -o ${@}
