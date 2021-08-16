@@ -113,3 +113,8 @@ tf.convert_to_tensor(foo)
 2021-08-13
 dense(4096) gets 0.17 accuracy
 256/256 [==============================] - 16s 64ms/step - loss: 3.3211 - accuracy: 0.1748 - val_loss: 3.3289 - val_accuracy: 0.1740
+
+
+------------------------------------------------------------
+2021-08-15
+conda activate tf25

@@ -6,7 +6,7 @@ from absl import flags
 from absl import logging
 
 import glob
-
+import toml
 import re
 from contextlib import redirect_stdout
 import collections
@@ -42,10 +42,10 @@ from tensorflow.keras.optimizers.schedules import CosineDecayRestarts
 from tensorflow.python.keras import backend
 import pandas as pd
 
+from input import *
 
-NUM_CLASSES = 4672
-BOARD_SHAPE = (20, 8, 8)
-BOARD_FLOATS = 1280
+flags.DEFINE_string('plan', 'v0.toml', '')
+
 
 def df_to_csv(df, fn, float_format='%6.4f'):
   df.to_csv(fn, index=False, float_format=float_format)
@@ -56,17 +56,6 @@ class objdict(dict):
     assert name in self, (name, self.keys())
     return self[name]
 
-
-def gen(fn):
-  db = leveldb.LevelDB(fn)
-  for ent in db.RangeIter():
-    ex = tf.train.Example().FromString(ent[1])
-    board = tf.convert_to_tensor(ex.features.feature['board'].float_list.value,
-                                 dtype=tf.float32)
-    board = tf.reshape(board, BOARD_SHAPE)
-    action = tf.convert_to_tensor(ex.features.feature['label'].int64_list.value[0],
-                                 dtype=tf.int64)
-    yield (board, action)
 
 
 class LogLrCallback(Callback):
@@ -105,16 +94,7 @@ def create_model():
   return Model(inputs=[board], outputs=x)
 
 
-def create_input_generator(fn, shuffle):
-  gen1 = functools.partial(gen, fn)
-  ds1 = tf.data.Dataset.from_generator(gen1,
-                                      output_types=('float32', 'int64'),
-                                      output_shapes=(BOARD_SHAPE, []))
-  ds1 = ds1.shuffle(1024)
-  ds1 = ds1.repeat()
-  ds1 = ds1.batch(128)
-  ds1 = ds1.prefetch(2)
-  return ds1
+
 
 
 def main(_argv):

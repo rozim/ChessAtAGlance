@@ -1,0 +1,10 @@
+
+[data]
+train = 'mega-v2-0.leveldb'
+validate = 'mega-v2-1.leveldb'
+shuffle = 1024
+batch = 8
+prefetch = 2
+
+
+
