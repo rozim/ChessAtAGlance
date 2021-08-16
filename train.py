@@ -47,7 +47,7 @@ from plan import load_plan
 from model import create_model
 
 FLAGS = flags.FLAGS
-flags.DEFINE_string('plan', 'v0.toml', '')
+flags.DEFINE_string('plan', '', '')
 
 
 def df_to_csv(df, fn, float_format='%6.4f'):
@@ -61,32 +61,15 @@ class LogLrCallback(Callback):
     logs['lr'] = backend.get_value(self.model.optimizer.lr(epoch))
 
 
-
-
-
-
-
 def main(_argv):
-
   tf.compat.v1.logging.set_verbosity(tf.compat.v1.logging.ERROR)
   os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
+  assert FLAGS.plan
+  
   plan = load_plan(FLAGS.plan)
 
   ds1 = create_input_generator(plan.data, is_train=True)
   ds2 = create_input_generator(plan.data, is_train=False) 
-  # gen1 = functools.partial(gen, 'mega-v2-1.leveldb')
-  # gen2 = functools.partial(gen, 'mega-v2-2.leveldb')
-  # ds1 = tf.data.Dataset.from_generator(gen1,
-  #                                     output_types=('float32', 'int64'),
-  #                                     output_shapes=(BOARD_SHAPE, []))
-  # ds1 = ds1.repeat()
-  # ds1 = ds1.batch(128)
-
-  # ds2 = tf.data.Dataset.from_generator(gen2,
-  #                                     output_types=('float32', 'int64'),
-  #                                     output_shapes=(BOARD_SHAPE, []))
-  # ds2 = ds2.repeat()
-  # ds2 = ds2.batch(128)
 
   m = create_model(plan.model)
   m.summary()
@@ -96,21 +79,25 @@ def main(_argv):
 
   tplan = plan.train
   lr = CosineDecayRestarts(initial_learning_rate=tplan.lr,
-                           first_decay_steps=5,
+                           first_decay_steps=tplan.first_decay_steps,
                            t_mul=1,
                            m_mul=1,
-                           alpha=0.10)
+                           alpha=tplan.alpha)
+  
   m.compile(optimizer=Adam(learning_rate=lr),
             loss=SparseCategoricalCrossentropy(from_logits=True),
             metrics=['accuracy'])
+  
   callbacks = [TerminateOnNaN(),
                LogLrCallback()]
+  
   history = m.fit(x=ds1,
                   epochs=tplan.epochs,
                   steps_per_epoch=tplan.steps_per_epoch,
                   validation_data=ds2,
                   validation_steps=tplan.validation_steps,
                   callbacks=callbacks)
+  
   print('all done')
   df = pd.DataFrame(history.history)
   df_to_csv(df, 'last.csv')
