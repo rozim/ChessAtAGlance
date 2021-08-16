@@ -51,6 +51,8 @@ def create_model(mplan):
   # out: bs, x, y, chan
   #          8, 8, 20
 
+  # tbd project if skip conn
+  
   for i in range(mplan.num_cnn):
     x = my_conv2d(name=f'cnn_{i}')(x)
     x = my_bn(name=f'bn_{i}')(x)
