@@ -35,3 +35,5 @@ local.mk
 *~
 shh
 *.leveldb
+last.csv
+last-model.txt
