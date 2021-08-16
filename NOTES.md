@@ -125,3 +125,28 @@ iterating on all data seems to go on forever
 ...
 4194304 1265
 8388608 2537
+
+------------------------------------------------------------
+{LD_LIBRARY_PATH}:/Users/dave/Projects/open_spiel/build:/Users/dave/miniforge3/lib/python3.9/site-packages/tensorflow
+
+level_db_read, ~75x as fast as python
+...
+8388608 34
+16777216 71
+
+16925485 72
+
+rerun with sizes
+16925485 75 (s) 89604555283 (bytes)
+83G uncompressed
+9G compressed
+16,925,485 --> 16M rows
+10x files
+170M rows
+
+16925485 / 128 (batch size)
+132230 batches
+
+
+132230 / 256 (steps per epoch)
+516 epochs --> 500 epochs should cover 1 file (once)
