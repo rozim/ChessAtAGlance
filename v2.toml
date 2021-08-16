@@ -14,7 +14,7 @@ dropout = 0.0
 
 top_tower = [1024]
 
-num_filters = 64
+num_filters = 128
 num_cnn = 3
 
 [train]

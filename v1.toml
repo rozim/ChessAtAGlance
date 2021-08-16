@@ -15,7 +15,7 @@ dropout = 0.0
 top_tower = [1024]
 
 num_filters = 64
-num_cnn = 3
+num_cnn = 6
 
 [train]
 epochs = 25
