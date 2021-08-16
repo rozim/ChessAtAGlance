@@ -27,18 +27,18 @@ def gen(fn):
     yield (board, action)
 
     
-def create_input_generator(plan, is_train=True):
-  gen1 = functools.partial(gen, plan.data.train if is_train else plan.data.validate)
+def create_input_generator(dplan, is_train=True):
+  gen1 = functools.partial(gen, dplan.train if is_train else dplan.validate)
   ds1 = tf.data.Dataset.from_generator(gen1,
                                       output_types=('float32', 'int64'),
                                       output_shapes=(BOARD_SHAPE, []))
   if is_train:
-    ds1 = ds1.shuffle(plan.data.shuffle)
+    ds1 = ds1.shuffle(dplan.shuffle)
   ds1 = ds1.repeat()
-  ds1 = ds1.batch(plan.data.batch,
+  ds1 = ds1.batch(dplan.batch,
                   num_parallel_calls=AUTOTUNE,
                   deterministic=False) # performance
-  ds1 = ds1.prefetch(plan.data.prefetch)
+  ds1 = ds1.prefetch(dplan.prefetch)
   return ds1    
 
     

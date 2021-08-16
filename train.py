@@ -43,18 +43,16 @@ from tensorflow.python.keras import backend
 import pandas as pd
 
 from input import *
+from plan import load_plan
+from model import create_model
 
+FLAGS = flags.FLAGS
 flags.DEFINE_string('plan', 'v0.toml', '')
 
 
 def df_to_csv(df, fn, float_format='%6.4f'):
   df.to_csv(fn, index=False, float_format=float_format)
 
-
-class objdict(dict):
-  def __getattr__(self, name):
-    assert name in self, (name, self.keys())
-    return self[name]
 
 
 
@@ -63,65 +61,41 @@ class LogLrCallback(Callback):
     logs['lr'] = backend.get_value(self.model.optimizer.lr(epoch))
 
 
-def create_model():
-  kernel_regularizer = regularizers.l2(1e-5)
-  data_format = 'channels_last'
-  nf = 64
-  my_conv2d = functools.partial(
-    Conv2D,
-    filters=nf,
-    kernel_size=(3, 3),
-    kernel_regularizer=kernel_regularizer,
-    data_format=data_format,
-    padding='same',
-    use_bias=False)
-
-  board = Input(shape=BOARD_SHAPE, dtype='float32')
-  x = board
-  # in: bs, chan, x, y
-  #         20    8, 8
-  #     0   1     2  3
-  x = Permute([2, 3, 1])(x)
-  # out: bs, x, y, chan
-  #          8, 8, 20
-
-  x = my_conv2d()(x)
-  x = my_conv2d()(x)
-  x = my_conv2d()(x)
-  x = Flatten()(x)
-  x = Dense(1024, activation='relu')(x)
-  x = Dense(NUM_CLASSES, name='logits', activation=None)(x)
-  return Model(inputs=[board], outputs=x)
 
 
 
 
 
 def main(_argv):
+
   tf.compat.v1.logging.set_verbosity(tf.compat.v1.logging.ERROR)
   os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
+  plan = load_plan(FLAGS.plan)
 
-  gen1 = functools.partial(gen, 'mega-v2-1.leveldb')
-  gen2 = functools.partial(gen, 'mega-v2-2.leveldb')
-  ds1 = tf.data.Dataset.from_generator(gen1,
-                                      output_types=('float32', 'int64'),
-                                      output_shapes=(BOARD_SHAPE, []))
-  ds1 = ds1.repeat()
-  ds1 = ds1.batch(128)
+  ds1 = create_input_generator(plan.data, is_train=True)
+  ds2 = create_input_generator(plan.data, is_train=False) 
+  # gen1 = functools.partial(gen, 'mega-v2-1.leveldb')
+  # gen2 = functools.partial(gen, 'mega-v2-2.leveldb')
+  # ds1 = tf.data.Dataset.from_generator(gen1,
+  #                                     output_types=('float32', 'int64'),
+  #                                     output_shapes=(BOARD_SHAPE, []))
+  # ds1 = ds1.repeat()
+  # ds1 = ds1.batch(128)
 
-  ds2 = tf.data.Dataset.from_generator(gen2,
-                                      output_types=('float32', 'int64'),
-                                      output_shapes=(BOARD_SHAPE, []))
-  ds2 = ds2.repeat()
-  ds2 = ds2.batch(128)
+  # ds2 = tf.data.Dataset.from_generator(gen2,
+  #                                     output_types=('float32', 'int64'),
+  #                                     output_shapes=(BOARD_SHAPE, []))
+  # ds2 = ds2.repeat()
+  # ds2 = ds2.batch(128)
 
-  m = create_model()
+  m = create_model(plan.model)
   m.summary()
   with open('last-model.txt', 'w') as f:
     with redirect_stdout(f):
       m.summary()
 
-  lr = CosineDecayRestarts(initial_learning_rate=0.001,
+  tplan = plan.train
+  lr = CosineDecayRestarts(initial_learning_rate=tplan.lr,
                            first_decay_steps=5,
                            t_mul=1,
                            m_mul=1,
@@ -132,10 +106,10 @@ def main(_argv):
   callbacks = [TerminateOnNaN(),
                LogLrCallback()]
   history = m.fit(x=ds1,
-                  epochs=25,
-                  steps_per_epoch=256,
+                  epochs=tplan.epochs,
+                  steps_per_epoch=tplan.steps_per_epoch,
                   validation_data=ds2,
-                  validation_steps=64,
+                  validation_steps=tplan.validation_steps,
                   callbacks=callbacks)
   print('all done')
   df = pd.DataFrame(history.history)
@@ -148,3 +122,5 @@ def main(_argv):
 
 if __name__ == '__main__':
   app.run(main)
+
+  
