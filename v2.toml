@@ -17,6 +17,12 @@ top_tower = [1024]
 num_filters = 128
 num_cnn = 3
 
+bn_momentum = 0.99
+
+
+
+
+
 [train]
 epochs = 25
 steps_per_epoch = 256

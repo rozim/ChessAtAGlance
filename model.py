@@ -38,7 +38,9 @@ def create_model(mplan):
   my_dense = functools.partial(Dense,
                                kernel_regularizer=kernel_regularizer)
 
-  my_bn = functools.partial(BatchNormalization)
+  my_bn = functools.partial(BatchNormalization, momentum=mplan.bn_momentum)
+
+
   my_activation = functools.partial(Activation, mplan.activation)
   my_dropout = functools.partial(Dropout, mplan.dropout)
 
