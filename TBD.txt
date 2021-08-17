@@ -1,0 +1,7 @@
+lr:
+lr warmup
+
+model:
+skip conn
+review batch norm, bais
+1x1 cnn to flatten
