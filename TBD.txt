@@ -1,7 +1,14 @@
 lr:
-lr warmup
+- lr warmup
 
 model:
-skip conn
-review batch norm, bais
-1x1 cnn to flatten
+- skip conn
+- review batch norm, bais
+- 1x1 cnn to flatten
+
+train:
+- save best model
+- eval best model on test set (along with last model)
+- AdamW (from where?)
+
+

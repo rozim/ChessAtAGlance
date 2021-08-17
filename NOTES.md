@@ -159,3 +159,13 @@ https://github.com/tensorflow/models/blob/master/official/nlp/optimization.py
 
 adamw
 https://github.com/tensorflow/addons/blob/master/tensorflow_addons/optimizers/weight_decay_optimizers.py
+
+
+results/2021-08-17_09:44:22
+val_accuracy    0.2258 (best)
+                0.2230 (last)
+test_accuracy : 0.2154 (last)
+
+val_accuracy    0.2309 (best)
+                0.2207 (last)
+test_accuracy : 0.2189 (last)
