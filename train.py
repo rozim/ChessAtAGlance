@@ -4,6 +4,7 @@ import leveldb
 from absl import app
 from absl import flags
 from absl import logging
+from datetime import datetime
 
 import glob
 import toml
@@ -65,17 +66,29 @@ def main(_argv):
   tf.compat.v1.logging.set_verbosity(tf.compat.v1.logging.ERROR)
   os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
   assert FLAGS.plan
+
+  out_dir = datetime.today().strftime('%Y-%m-%d_%H:%M:%S')
+  out_dir = os.path.join('results', out_dir)
+  print('mkdir', out_dir)
+  os.mkdir(out_dir)  
   
   plan = load_plan(FLAGS.plan)
+  fn = os.path.join(out_dir, FLAGS.plan)
+  print(f'Write {fn}')
+  with open(fn, 'w') as f:
+    toml.dump(plan, f)
+  os.chmod(fn, 0o444)    
 
   ds1 = create_input_generator(plan.data, is_train=True)
   ds2 = create_input_generator(plan.data, is_train=False) 
 
   m = create_model(plan.model)
-  m.summary()
-  with open('last-model.txt', 'w') as f:
+  fn = os.path.join(out_dir, 'model-summary.txt')
+  print(f'Write {fn}')
+  with open(fn, 'w') as f:
     with redirect_stdout(f):
       m.summary()
+  os.chmod(fn, 0o444)
 
   tplan = plan.train
   lr = CosineDecayRestarts(initial_learning_rate=tplan.lr,
@@ -87,7 +100,9 @@ def main(_argv):
   m.compile(optimizer=Adam(learning_rate=lr),
             loss=SparseCategoricalCrossentropy(from_logits=True),
             metrics=['accuracy'])
-  
+  #tf.keras.metrics.Precision(top_k=3, name='p_3'),
+  #tf.keras.metrics.Recall(top_k=3, name='r_3')])
+
   callbacks = [TerminateOnNaN(),
                LogLrCallback()]
   
@@ -98,9 +113,18 @@ def main(_argv):
                   validation_steps=tplan.validation_steps,
                   callbacks=callbacks)
   
-  print('all done')
   df = pd.DataFrame(history.history)
-  df_to_csv(df, 'last.csv')
+
+  fn = os.path.join(out_dir, 'history.csv')
+  print(f'Write {fn}')  
+  with open(fn, 'w') as f:  
+    df_to_csv(df, f)
+  os.chmod(fn, 0o444)        
+
+  v1 = df['val_accuracy'].max()
+  v2 = df['val_accuracy'].values[-1]  
+  print(f'val_accuracy {v1:6.4f} (best)')
+  print(f'             {v2:6.4f} (last)')
 
 
 
