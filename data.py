@@ -27,9 +27,10 @@ def gen(fn):
     yield (board, action)
 
     
-def create_input_generator(dplan, fn, is_train=True):
+def create_input_generator(dplan, fn, is_train=True, verbose=True):
   assert os.path.isdir(fn), fn
-  print(f'Open {fn}')
+  if verbose:
+    print(f'Open {fn}')
   gen1 = functools.partial(gen, fn)
   ds1 = tf.data.Dataset.from_generator(gen1,
                                       output_types=('float32', 'int64'),
