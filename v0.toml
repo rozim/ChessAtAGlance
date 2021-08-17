@@ -10,7 +10,7 @@ prefetch = 2
 
 
 [model]
-l2 = 1e-5
+l2 = 0.0
 activation = 'relu'
 dropout = 0.0
 
@@ -22,11 +22,14 @@ num_cnn = 3
 bn_momentum = 0.99
 
 [train]
-epochs = 2
-steps_per_epoch = 25
+optimizer = 'Adam'
+epochs = 25
+
+steps_per_epoch = 100
 validation_steps = 10
 test_steps = 100
 
+lr_schedule = 'cosine'
 lr = 0.01
 first_decay_steps = 5 # compare w/ epochs
 alpha = 0.10

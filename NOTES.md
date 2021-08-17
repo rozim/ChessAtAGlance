@@ -153,3 +153,9 @@ rerun with sizes
 
 see this later
 https://lczero.org/dev/wiki/technical-explanation-of-leela-chess-zero/
+
+warmup
+https://github.com/tensorflow/models/blob/master/official/nlp/optimization.py
+
+adamw
+https://github.com/tensorflow/addons/blob/master/tensorflow_addons/optimizers/weight_decay_optimizers.py

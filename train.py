@@ -38,14 +38,15 @@ from tensorflow.keras.losses import SparseCategoricalCrossentropy
 
 from tensorflow.keras.metrics import AUC
 from tensorflow.keras.models import Model
-from tensorflow.keras.optimizers import Adam, Ftrl
-from tensorflow.keras.optimizers.schedules import CosineDecayRestarts
+from tensorflow.keras.optimizers import Adam, Ftrl, SGD
+
 from tensorflow.python.keras import backend
 import pandas as pd
 
 from data import create_input_generator
 from plan import load_plan
 from model import create_model
+from lr import create_lr_schedule
 
 FLAGS = flags.FLAGS
 flags.DEFINE_string('plan', '', 'toml file')
@@ -63,10 +64,10 @@ class LogLrCallback(Callback):
 
 
 def main(_argv):
+  flags.mark_flags_as_required(['plan'])
   t1 = time.time()
   tf.compat.v1.logging.set_verbosity(tf.compat.v1.logging.ERROR)
   os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
-  assert FLAGS.plan
 
   out_dir = datetime.today().strftime('%Y-%m-%d_%H:%M:%S')
   out_dir = os.path.join('results', out_dir)
@@ -94,13 +95,20 @@ def main(_argv):
   os.chmod(fn, 0o444)
 
   tplan = plan.train
-  lr = CosineDecayRestarts(initial_learning_rate=tplan.lr,
-                           first_decay_steps=tplan.first_decay_steps,
-                           t_mul=1,
-                           m_mul=1,
-                           alpha=tplan.alpha)
-  
-  m.compile(optimizer=Adam(learning_rate=lr),
+  lr = create_lr_schedule(tplan)
+  # lr = CosineDecayRestarts(initial_learning_rate=tplan.lr,
+  #                          first_decay_steps=tplan.first_decay_steps,
+  #                          t_mul=1,
+  #                          m_mul=1,
+  #                          alpha=tplan.alpha)  
+
+  if tplan.optimizer == 'SGD':
+    optimizer = SGD(learning_rate=lr)
+  elif tplan.optimizer == 'Adam':
+    optimizer = Adam(learning_rate=lr)
+  else:
+    assert False, tplan.optimizer
+  m.compile(optimizer=optimizer,
             loss=SparseCategoricalCrossentropy(from_logits=True),
             metrics=['accuracy'])
   #tf.keras.metrics.Precision(top_k=3, name='p_3'),
@@ -142,12 +150,12 @@ def main(_argv):
   with open(fn, 'w') as f:    
     print(f'val_accuracy    {v1:6.4f} (best)')
     print(f'                {v2:6.4f} (last)')
-    print(f'test_accuracy : {test_ev["accuracy"]:6.4f} (best)')
+    print(f'test_accuracy : {test_ev["accuracy"]:6.4f} (last)')
     
     f.write(f'val_accuracy  : {v1:6.4f} (best)\n')
     f.write(f'val_accuracy  : {v2:6.4f} (last)\n')
 
-    f.write(f'test_accuracy : {test_ev["accuracy"]:6.4f} (best)\n')
+    f.write(f'test_accuracy : {test_ev["accuracy"]:6.4f} (last)\n')
 
     f.write(f'time          : {int(time.time() - t1)}\n')    
   os.chmod(fn, 0o444) 
