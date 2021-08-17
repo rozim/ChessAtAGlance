@@ -1,0 +1,28 @@
+
+[data]
+train = 'mega-v2-0.leveldb'
+validate = 'mega-v2-1.leveldb'
+shuffle = 1024
+batch = 128
+prefetch = 2
+
+
+[model]
+l2 = 1e-5
+activation = 'relu'
+dropout = 0.0
+
+top_tower = [1024]
+
+num_filters = 64
+num_cnn = 3
+
+bn_momentum = 0.0
+
+[train]
+epochs = 25
+steps_per_epoch = 256
+validation_steps = 10
+lr = 0.01
+first_decay_steps = 5 # compare w/ epochs
+alpha = 0.10
