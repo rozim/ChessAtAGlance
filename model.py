@@ -20,7 +20,7 @@ from tensorflow.keras.optimizers.schedules import CosineDecayRestarts
 from tensorflow.python.keras import backend
 
 from plan import load_plan
-from input import *
+from data import *
 
 def create_model(mplan):
   kernel_regularizer = regularizers.l2(mplan.l2)

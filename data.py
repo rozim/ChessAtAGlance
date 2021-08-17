@@ -1,4 +1,4 @@
-import sys
+import sys, os
 import leveldb
 import time
 import tensorflow as tf
@@ -27,8 +27,10 @@ def gen(fn):
     yield (board, action)
 
     
-def create_input_generator(dplan, is_train=True):
-  gen1 = functools.partial(gen, dplan.train if is_train else dplan.validate)
+def create_input_generator(dplan, fn, is_train=True):
+  assert os.path.isdir(fn), fn
+  print(f'Open {fn}')
+  gen1 = functools.partial(gen, fn)
   ds1 = tf.data.Dataset.from_generator(gen1,
                                       output_types=('float32', 'int64'),
                                       output_shapes=(BOARD_SHAPE, []))

@@ -150,3 +150,6 @@ rerun with sizes
 
 132230 / 256 (steps per epoch)
 516 epochs --> 500 epochs should cover 1 file (once)
+
+see this later
+https://lczero.org/dev/wiki/technical-explanation-of-leela-chess-zero/

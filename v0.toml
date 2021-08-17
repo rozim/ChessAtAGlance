@@ -1,7 +1,9 @@
 
 [data]
-train = 'mega-v2-0.leveldb'
+train    = 'mega-v2-0.leveldb'
 validate = 'mega-v2-1.leveldb'
+test     = 'mega-v2-2.leveldb'
+
 shuffle = 1024
 batch = 128
 prefetch = 2
@@ -20,9 +22,11 @@ num_cnn = 3
 bn_momentum = 0.99
 
 [train]
-epochs = 25
-steps_per_epoch = 256
+epochs = 2
+steps_per_epoch = 25
 validation_steps = 10
+test_steps = 100
+
 lr = 0.01
 first_decay_steps = 5 # compare w/ epochs
 alpha = 0.10

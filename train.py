@@ -43,18 +43,18 @@ from tensorflow.keras.optimizers.schedules import CosineDecayRestarts
 from tensorflow.python.keras import backend
 import pandas as pd
 
-from input import *
+from data import create_input_generator
 from plan import load_plan
 from model import create_model
 
 FLAGS = flags.FLAGS
-flags.DEFINE_string('plan', '', '')
+flags.DEFINE_string('plan', '', 'toml file')
+
+flags.DEFINE_multi_string('d', None, 'override plan settings')
 
 
 def df_to_csv(df, fn, float_format='%6.4f'):
   df.to_csv(fn, index=False, float_format=float_format)
-
-
 
 
 class LogLrCallback(Callback):
@@ -63,6 +63,7 @@ class LogLrCallback(Callback):
 
 
 def main(_argv):
+  t1 = time.time()
   tf.compat.v1.logging.set_verbosity(tf.compat.v1.logging.ERROR)
   os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
   assert FLAGS.plan
@@ -79,8 +80,10 @@ def main(_argv):
     toml.dump(plan, f)
   os.chmod(fn, 0o444)    
 
-  ds1 = create_input_generator(plan.data, is_train=True)
-  ds2 = create_input_generator(plan.data, is_train=False) 
+  dplan = plan.data
+  ds1 = create_input_generator(dplan, dplan.train, is_train=True)
+  ds2 = create_input_generator(dplan, dplan.validate, is_train=False)
+  ds3 = create_input_generator(dplan, dplan.test, is_train=False) if 'test' in dplan else None
 
   m = create_model(plan.model)
   fn = os.path.join(out_dir, 'model-summary.txt')
@@ -105,15 +108,25 @@ def main(_argv):
 
   callbacks = [TerminateOnNaN(),
                LogLrCallback()]
-  
+
   history = m.fit(x=ds1,
                   epochs=tplan.epochs,
                   steps_per_epoch=tplan.steps_per_epoch,
                   validation_data=ds2,
                   validation_steps=tplan.validation_steps,
                   callbacks=callbacks)
-  
   df = pd.DataFrame(history.history)
+
+  fn = os.path.join(out_dir, 'my.model')
+  print(f'Write {fn}')    
+  m.save(fn)
+  os.chmod(fn, 0o755) 
+
+  if ds3:
+    print('Test')
+    test_ev = m.evaluate(x=ds3, return_dict=True, steps=tplan.test_steps)
+    print('Test:', test_ev)
+    #df_test = pd.DataFrame.from_dict(test_ev, orient='index')
 
   fn = os.path.join(out_dir, 'history.csv')
   print(f'Write {fn}')  
@@ -122,13 +135,23 @@ def main(_argv):
   os.chmod(fn, 0o444)        
 
   v1 = df['val_accuracy'].max()
-  v2 = df['val_accuracy'].values[-1]  
-  print(f'val_accuracy {v1:6.4f} (best)')
-  print(f'             {v2:6.4f} (last)')
+  v2 = df['val_accuracy'].values[-1]
 
+  fn = os.path.join(out_dir, 'report.txt')
+  print(f'Write {fn}')  
+  with open(fn, 'w') as f:    
+    print(f'val_accuracy    {v1:6.4f} (best)')
+    print(f'                {v2:6.4f} (last)')
+    print(f'test_accuracy : {test_ev["accuracy"]:6.4f} (best)')
+    
+    f.write(f'val_accuracy  : {v1:6.4f} (best)\n')
+    f.write(f'val_accuracy  : {v2:6.4f} (last)\n')
 
+    f.write(f'test_accuracy : {test_ev["accuracy"]:6.4f} (best)\n')
 
-  # print('predict: ', m.predict(ds.take(1)))
+    f.write(f'time          : {int(time.time() - t1)}\n')    
+  os.chmod(fn, 0o444) 
+
 
 
 if __name__ == '__main__':

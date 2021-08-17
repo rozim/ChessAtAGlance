@@ -3,3 +3,4 @@ pandas
 numpy
 leveldb
 open_spiel
+matplotlib
