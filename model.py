@@ -59,7 +59,8 @@ def create_model(mplan):
     x = my_conv2d(name=f'cnn_{i}')(x)
     x = my_bn(name=f'bn_{i}')(x)
     x = my_activation(name=f'act_{i}')(x)
-    x = my_dropout(name=f'drop_{i}')(x)
+    if mplan.dropout > 0.0:
+      x = my_dropout(name=f'drop_{i}')(x)
     # tbd: skip
 
   # tbd: 1x1 cnn first?
@@ -69,7 +70,8 @@ def create_model(mplan):
     x = my_dense(w, name=f'top_{i}')(x)
     x = my_bn(name=f'top_bn_{i}')(x)
     x = my_activation(name=f'top_act_{i}')(x)
-    x = my_dropout(name=f'top_drop_{i}')(x)
+    if mplan.dropout > 0.0:    
+      x = my_dropout(name=f'top_drop_{i}')(x)
     
   x = my_dense(NUM_CLASSES, name='logits', activation=None)(x)
   
