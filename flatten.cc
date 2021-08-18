@@ -9,70 +9,53 @@
 
 #include "leveldb/db.h"
 #include "leveldb/status.h"
-
-#include "protobuf/io/gzip_stream.h"
-#include "protobuf/io/zero_copy_stream.h"
-#include "protobuf/io/zero_copy_stream_impl.h"
-#include "protobuf/io/coded_stream.h"
+#include "snappy.h"
 
 using namespace std;
 
-using namespace google::protobuf::io;
 
 int main(int argc, char * argv[]) {
   time_t t1 = time(0L);
 
-  //explicit GzipOutputStream(ZeroCopyOutputStream* sub_stream);
-
-  //ZeroCopyOutputStream example;
-  //int outfd = open("outfile", O_WRONLY);
-  //ZeroCopyOutputStream* output = new FileOutputStream(outfd);
-
-  printf("tick: %d\n", __LINE__);
-  int fd = open("myfile", O_CREAT | O_WRONLY, 0644);
-  if (fd < 0) {
-    perror("myfile");
+  FILE *f = fopen(argv[2], "w");
+  if (f == NULL) {
+    perror("foo");
     exit(1);
   }
-  printf("tick: %d\n", __LINE__);  
-  ZeroCopyOutputStream* raw_output = new FileOutputStream(fd);
-  printf("tick: %d\n", __LINE__);  
-  CodedOutputStream* coded_output = new CodedOutputStream(raw_output);
-  assert(coded_output != NULL);
-  printf("tick: %d\n", __LINE__);  
-  int magic_number = 1234;
-  char text[] = "Hello world!";
-  printf("tick: %d\n", __LINE__);    
-  coded_output->WriteLittleEndian32(magic_number);
-  printf("tick: %d\n", __LINE__);    
-  coded_output->WriteVarint32(strlen(text));
-  printf("tick: %d\n", __LINE__);    
-  coded_output->WriteRaw(text, strlen(text));
-  printf("tick: %d\n", __LINE__);  
-  delete coded_output;
-  delete raw_output;
-  printf("tick: %d\n", __LINE__);  
-  close(fd);
-
-  exit(0);
+  size_t bs = 1024 * 1024 * 16;
+  char *buf = (char *) malloc(bs);
+  setbuffer(f, buf, bs);
 
   leveldb::DB* db;
-  leveldb::Status status = leveldb::DB::Open(leveldb::Options(), "mega-v2-1.leveldb", &db);
+  leveldb::Status status = leveldb::DB::Open(leveldb::Options(), argv[1], &db);
   assert(status.ok());
 
   leveldb::Iterator* it = db->NewIterator(leveldb::ReadOptions());
   long n = 0;
   long mod = 1;
+  std::string z;
+  size_t orig = 0;
+  size_t compressed = 0;
+  
   for (it->SeekToFirst(); it->Valid(); it->Next()) {
     n++;
     string value = it->value().ToString();
     if ((n % mod) == 0) {
       time_t dt = time(0L) - t1;
-      printf("%ld %ld %ld\n", n, dt, value.size());
+      printf("%ld %ld %ld : %ld -> %ld\n", n, dt, value.size(), orig, compressed);
       mod *= 2;
     }
+    int zlen = snappy::Compress(value.c_str(), value.size(), &z);
+    fwrite(&zlen, sizeof(zlen), 1, f); // careful: use int, not size_t
+    fwrite(z.c_str(), zlen, 1, f);
+    orig += value.size();
+    compressed += zlen;
   }
   printf("\n");
   time_t dt = time(0L) - t1;
   printf("%ld %ld (s)\n", n, dt);
+  printf("Orig:       %ld\n", orig);
+  printf("Compressed: %ld\n", compressed);
+  fflush(f);
+  fclose(f);
 }

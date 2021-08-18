@@ -169,3 +169,16 @@ test_accuracy : 0.2154 (last)
 val_accuracy    0.2309 (best)
                 0.2207 (last)
 test_accuracy : 0.2189 (last)
+
+------------------------------------------------------------
+bs=1024 works best in an evaluation test -2048 is same, and 512 is slower, normalized for same # examples
+
+------------------------------------------------------------
+FileOutputStream
+ZeroCopyOutputStream example
+GzipOutputStream
+wire_format_lite
+WriteInt32NoTag
+Message:SerializeToZeroCopyStream
+-----
+export LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:/Users/dave/Projects/open_spiel/build:/Users/dave/miniforge3/lib/python3.9/site-packages/tensorflow

@@ -16,7 +16,6 @@ CXXFLAGS += -I${ABSIEL_CPP}
 CXXFLAGS += -I/Users/dave/miniforge3/lib/python3.9/site-packages/tensorflow/include
 CXXFLAGS += -I/usr/local/include
 CXXFLAGS += -I/opt/homebrew/include
-CXXFLAGS += -I/opt/homebrew/include/google
 #CXXFLAGS += -I${TENSORFLOW_DIR2}
 #CXXFLAGS += -I/Users/dave/Projects/tensorflow/bazel-bin/third_party/eigen3/include
 # CXXFLAGS +=  -fno-builtin-malloc -fno-builtin-calloc -fno-builtin-realloc -fno-builtin-free
@@ -27,9 +26,10 @@ LDFLAGS += -L${OPEN_SPIEL_LIB} -lopen_spiel
 LDFLAGS += -L/Users/dave/miniforge3/lib/python3.9/site-packages/tensorflow -ltensorflow_framework
 LDFLAGS += -L/opt/homebrew/lib
 LDFLAGS += -lleveldb
-LDFLAGS += -lprotoc -lprotobuf
+LDFLAGS += -lsnappy
 
-all : t gen leveldb_read
+
+all : t gen leveldb_read flatten
 
 t : t.o
 	${LD} t.o ${LDFLAGS} -o ${@}

@@ -100,8 +100,10 @@ int main(int argc, char * argv[]) {
       board_t board;
       board_start(&board);
       char str[256];
-
+      int ply = -1;
+      
       while (pgn_next_move(&pgn, str, 256)) {
+	ply++;
 	if (state.CurrentPlayer() < 0) { // maybe draw by rep recognized by spiel
 	  continue; // read thru moves
 	}
@@ -120,8 +122,6 @@ int main(int argc, char * argv[]) {
 
 	absl::uint128 key = absl::MakeUint128(state.Board().HashValue(), action);
 
-
-
 	if (mega.insert(key).second) {
 	  std::vector<float> v(game->ObservationTensorSize());
 	  state.ObservationTensor(state.CurrentPlayer(),
@@ -132,6 +132,7 @@ int main(int argc, char * argv[]) {
 	  AppendFeatureValues({action2s}, "san", &ex);
 	  AppendFeatureValues({maybe_move->ToLAN()}, "lan", &ex);	  
 	  AppendFeatureValues({state.Board().ToFEN()}, "fen", &ex);
+	  AppendFeatureValues({ply}, "ply", &ex); 
 	  approx_bytes += v.size() + 4 + 4 + 4 + 4 + 32;
 
 	  ex_out.clear();
