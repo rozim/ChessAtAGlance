@@ -15,11 +15,13 @@ FLAGS = flags.FLAGS
 flags.DEFINE_string('plan', None, 'toml file')
 flags.DEFINE_string('model', None, '')
 flags.DEFINE_string('fn', '', '')
-flags.DEFINE_integer('n', 128, '')
+flags.DEFINE_integer('n', None, '')
+flags.DEFINE_integer('bs', None, '')
 flags.DEFINE_multi_string('d', None, 'override plan settings')
 
 def main(_argv):
-  flags.mark_flags_as_required(['plan', 'model'])
+  t0 = time.time()
+  flags.mark_flags_as_required(['plan', 'model', 'bs', 'n'])
   tf.compat.v1.logging.set_verbosity(tf.compat.v1.logging.ERROR)
   os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
 
@@ -30,18 +32,21 @@ def main(_argv):
   #   assert '=' in over
   #   left, right = over.split('=')
   #   assert left in plan, plan.keys()
-    
   # sys.exit(0)
 
-  
   dplan, tplan = plan.data, plan.train
+  dplan.batch = FLAGS.bs
 
   model = tf.keras.models.load_model(FLAGS.model)
 
   steps = 1
 
+  goal = FLAGS.n if FLAGS.n else tplan.test_steps
+  #ds3 = create_input_generator(dplan, FLAGS.fn if FLAGS.fn else dplan.test, is_train=False, verbose=False)
+  #ds3 = ds3.take(goal * dplan.batch).cache()
+
   dres = collections.defaultdict(list)
-  while steps <= FLAGS.n if FLAGS.n else tplan.test_steps:
+  while steps <= goal:
     ds3 = create_input_generator(dplan, FLAGS.fn if FLAGS.fn else dplan.test, is_train=False, verbose=False)    
     t1 = time.time()
     test_ev = model.evaluate(x=ds3, return_dict=True, steps=steps, verbose=0)
@@ -55,6 +60,7 @@ def main(_argv):
     
   df = pd.DataFrame.from_dict(dres)
   df.to_csv('evaluate.csv', index=False)
+  print(f'done: {int(time.time() - t0)}')
   
 
 if __name__ == '__main__':
