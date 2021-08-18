@@ -20,7 +20,6 @@ import os
 
 import random
 import sys
-import tensorflow as tf
 import time
 
 from zipfile import ZipFile
@@ -49,7 +48,7 @@ from model import create_model
 from lr import create_lr_schedule
 
 FLAGS = flags.FLAGS
-flags.DEFINE_string('plan', '', 'toml file')
+flags.DEFINE_string('plan', None, 'toml file')
 
 flags.DEFINE_multi_string('d', None, 'override plan settings')
 
