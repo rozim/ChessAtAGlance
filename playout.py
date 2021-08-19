@@ -53,7 +53,8 @@ def main(argv):
   while not state.is_terminal():
     print()
     print('---------')    
-    print('FEN: ', state) 
+    print('FEN: ', state)
+    print('REW: ', state.returns())
     board = make_observation(game).tensor.reshape(1, 20, 8, 8)
 
     logits = model.predict([board])[0]
@@ -87,6 +88,11 @@ def main(argv):
     state.apply_action_with_legality_check(choice_action)
   print()
 
+  print('x0', state.is_terminal())
+  print('x1', state.rewards())
+  print('x2', state.returns())
+  print('x3', game.utility_sum())  
+
   col = 0
   buf = []
   for ply, san in enumerate(sans):
@@ -100,6 +106,8 @@ def main(argv):
       print(''.join(buf))
       buf = []
       col = 0
+
+
 
 # rnbqk2r/5pb1/p1pppnp1/1p5p/3P4/PPPBPNPP/5P2/RNBQK2R w KQkq - 1 10
 
