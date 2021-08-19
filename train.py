@@ -118,9 +118,10 @@ def main(_argv):
 
   callbacks = [TerminateOnNaN(),
                LogLrCallback()]
-  
+
+  best_path = os.path.join(out_dir, 'best.model')
   callbacks.append(BestNModelCheckpoint(
-    filepath=os.path.join(out_dir, 'best.model'),
+    filepath=best_path,
     monitor='val_accuracy',
     model='max',
     max_to_keep=1,
@@ -142,11 +143,17 @@ def main(_argv):
 
   if ds3:
     tt0 = time.time()
-    print('Test')
+    print('Test (last)')
     test_ev = m.evaluate(x=ds3, return_dict=True, steps=tplan.test_steps)
     dt = time.time() - tt0
     print('Test:', test_ev, int(dt))
-    #df_test = pd.DataFrame.from_dict(test_ev, orient='index')
+
+    print('Test (best)')
+    tt0 = time.time()
+    ds3 = create_input_generator(dplan, dplan.test, is_train=False) # rewind    
+    test_ev2 = tf.keras.models.load_model(best_path).evaluate(x=ds3, return_dict=True, steps=tplan.test_steps)
+    dt = time.time() - tt0
+    print('Test/2:', test_ev2, int(dt))    
 
   fn = os.path.join(out_dir, 'history.csv')
   print(f'Write {fn}')  
@@ -162,12 +169,14 @@ def main(_argv):
   with open(fn, 'w') as f:    
     print(f'val_accuracy    {v1:6.4f} (best)')
     print(f'                {v2:6.4f} (last)')
-    print(f'test_accuracy : {test_ev["accuracy"]:6.4f} (last)')
+    print(f'test_accuracy   {test_ev2["accuracy"]:6.4f} (best)')        
+    print(f'                {test_ev["accuracy"]:6.4f} (last)')
     
     f.write(f'val_accuracy  : {v1:6.4f} (best)\n')
     f.write(f'val_accuracy  : {v2:6.4f} (last)\n')
 
-    f.write(f'test_accuracy : {test_ev["accuracy"]:6.4f} (last)\n')
+    f.write(f'test_accuracy : {test_ev2["accuracy"]:6.4f} (best)\n')
+    f.write(f'test_accuracy : {test_ev["accuracy"]:6.4f} (last)\n')    
 
     f.write(f'time          : {int(time.time() - t1)}\n')    
   os.chmod(fn, 0o444) 
