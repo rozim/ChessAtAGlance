@@ -85,6 +85,20 @@ def create_model(mplan):
         x = my_dropout(name=f'drop_{i}b')(x)
         
   # tbd: 1x1 cnn first?
+  if mplan.do_flatten1x1:
+    x = Conv2D(
+      filters=mplan.num_filters,
+      kernel_size=(1, 1),
+      kernel_regularizer=kernel_regularizer,
+      data_format=data_format,
+      padding='same',
+      use_bias=False,
+      name='cnn_flatten')(x)
+    x = my_bn(name=f'bn_flatten')(x)
+    x = my_activation(name=f'act_flatten')(x)
+    if mplan.dropout > 0.0:
+      x = my_dropout(name=f'drop_flatten')(x)    
+
   x = Flatten()(x)
 
   for i, w in enumerate(mplan.top_tower):
