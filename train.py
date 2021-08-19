@@ -124,7 +124,7 @@ def main(_argv):
                   callbacks=callbacks)
   df = pd.DataFrame(history.history)
 
-  fn = os.path.join(out_dir, 'my.model')
+  fn = os.path.join(out_dir, 'last.model')
   print(f'Write {fn}')    
   m.save(fn)
   os.chmod(fn, 0o755) 
