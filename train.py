@@ -130,9 +130,11 @@ def main(_argv):
   os.chmod(fn, 0o755) 
 
   if ds3:
+    tt0 = time.time()
     print('Test')
     test_ev = m.evaluate(x=ds3, return_dict=True, steps=tplan.test_steps)
-    print('Test:', test_ev)
+    dt = time.time() - tt0
+    print('Test:', test_ev, int(dt))
     #df_test = pd.DataFrame.from_dict(test_ev, orient='index')
 
   fn = os.path.join(out_dir, 'history.csv')

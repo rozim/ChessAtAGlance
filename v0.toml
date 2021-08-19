@@ -1,12 +1,12 @@
 
 [data]
-train    = 'mega-v2-0.leveldb'
-validate = 'mega-v2-1.leveldb'
-test     = 'mega-v2-2.leveldb'
+train    = 'mega-v2-0.snappy'
+validate = 'mega-v2-1.snappy'
+test     = 'mega-v2-2.snappy'
 
-shuffle = 1024
-batch = 128
-prefetch = 2
+shuffle = 10240
+batch = 1024
+prefetch = 4
 
 
 [model]
@@ -17,19 +17,19 @@ dropout = 0.0
 top_tower = [1024]
 
 num_filters = 64
-num_cnn = 3
+num_cnn = 4
 
 bn_momentum = 0.99
 
 [train]
 optimizer = 'Adam'
-epochs = 25
+epochs = 100
 
-steps_per_epoch = 100
-validation_steps = 10
-test_steps = 100
+steps_per_epoch = 50
+validation_steps = 25
+test_steps = 128
 
 lr_schedule = 'cosine'
 lr = 0.01
-first_decay_steps = 5 # compare w/ epochs
+first_decay_steps = 10 # compare w/ epochs
 alpha = 0.10
