@@ -37,3 +37,6 @@ shh
 *.leveldb
 last.csv
 last-model.txt
+*.snappy
+__pycache__/
+0/
