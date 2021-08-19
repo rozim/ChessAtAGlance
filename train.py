@@ -121,7 +121,7 @@ def main(_argv):
   
   callbacks.append(BestNModelCheckpoint(
     filepath=os.path.join(out_dir, 'best.model'),
-    monitor='accuracy',
+    monitor='val_accuracy',
     model='max',
     max_to_keep=1,
     save_weights_only=False,
