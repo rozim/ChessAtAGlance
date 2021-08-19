@@ -4,3 +4,6 @@
 [submodule "addons"]
 	path = addons
 	url = https://github.com/tensorflow/addons.git
+[submodule "tf_utils"]
+	path = tf_utils
+	url = https://github.com/schustmi/tf_utils.git

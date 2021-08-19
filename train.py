@@ -47,6 +47,9 @@ from plan import load_plan
 from model import create_model
 from lr import create_lr_schedule
 
+from tf_utils_callbacks.callbacks import BestNModelCheckpoint
+
+
 FLAGS = flags.FLAGS
 flags.DEFINE_string('plan', None, 'toml file')
 
@@ -115,6 +118,14 @@ def main(_argv):
 
   callbacks = [TerminateOnNaN(),
                LogLrCallback()]
+  
+  callbacks.append(BestNModelCheckpoint(
+    filepath=os.path.join(out_dir, 'best.model'),
+    monitor='accuracy',
+    model='max',
+    max_to_keep=1,
+    save_weights_only=False,
+    verbose=1))
 
   history = m.fit(x=ds1,
                   epochs=tplan.epochs,
