@@ -2,6 +2,7 @@ from absl import app
 from plan import *
 import functools
 from tensorflow.keras.optimizers.schedules import CosineDecayRestarts
+from tensorflow.keras.callbacks import LearningRateScheduler
 
 def create_lr_schedule(tplan):
   if tplan.lr_schedule == 'warm_linear':
@@ -16,29 +17,25 @@ def create_lr_schedule(tplan):
   return lr
 
   
-def create_warm_linear_schedule(tplan, epoch):
-  lr, train_epochs, train_warmup = (tplan.lr,
-                                    tplan.epochs,
-                                    tplan.warmup)
+def create_warm_linear_schedule(tplan):
+  def _create_warm_linear_schedule(epoch, ignore_lr):  
+    lr, train_epochs, train_warmup = (tplan.lr,
+                                      tplan.epochs,
+                                      tplan.warmup)
 
+    epoch = epoch + 1.0
 
-  epoch = epoch + 1.0
-
-  if epoch <= train_warmup:
-
-    return lr * (epoch / train_warmup)
-
-  else:
-    pct = (epoch - train_warmup) / (train_epochs - train_warmup)
-    return lr - (pct * lr)
+    if epoch <= train_warmup:
+      return lr * (epoch / train_warmup)
+    else:
+      pct = (epoch - train_warmup) / (train_epochs - train_warmup)
+      return lr - (pct * lr)
+  return LearningRateScheduler(_create_warm_linear_schedule)
 
 
 def main(argv):
-  plan = load_plan('v4.toml')
-  tplan = plan.train
-  schedule = functools.partial(create_warm_linear_schedule, tplan)
-  for e in range(tplan.epochs):
-    print(e, schedule(e))
+  pass
+
     
 if __name__ == '__main__':
   app.run(main)      
