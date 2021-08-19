@@ -60,7 +60,26 @@ def main(argv):
 
     state.apply_action_with_legality_check(choice_action)
   print()
-  print(' '.join(sans))
+
+  col = 0
+  buf = []
+  for ply, san in enumerate(sans):
+    if ply % 2 == 0:
+      s = f' {int(1+(ply/2))}.'
+      buf.append(s)
+      col += len(s)
+    buf.append(' ' + san)
+    col += 1 + len(san)
+    if col >= 72:
+      print(''.join(buf))
+      buf = []
+      col = 0
+
+# rnbqk2r/5pb1/p1pppnp1/1p5p/3P4/PPPBPNPP/5P2/RNBQK2R w KQkq - 1 10
+
+
+      
+
 
 
 if __name__ == '__main__':
