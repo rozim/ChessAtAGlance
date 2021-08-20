@@ -5,8 +5,9 @@ from tensorflow.keras.optimizers.schedules import CosineDecayRestarts
 from tensorflow.keras.callbacks import LearningRateScheduler
 
 def create_lr_schedule(tplan):
+  """ Returns callback, initial lr"""
   if tplan.lr_schedule == 'warm_linear':
-    return functools.partial(create_warm_linear_schedule, tplan)
+    return (create_warm_linear_schedule(tplan), tplan.lr)
   assert tplan.lr_schedule == 'cosine'
   
   lr = CosineDecayRestarts(initial_learning_rate=tplan.lr,
@@ -14,7 +15,7 @@ def create_lr_schedule(tplan):
                            t_mul=1,
                            m_mul=1,
                            alpha=tplan.alpha)
-  return lr
+  return (None, lr)
 
   
 def create_warm_linear_schedule(tplan):
