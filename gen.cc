@@ -60,7 +60,7 @@ int main(int argc, char * argv[]) {
 
   std::vector<leveldb::DB*> dbs;
   for (int i = 0; i < 10; i++) {
-    string file_name = absl::StrFormat("mega-v2-%d.leveldb", i);
+    string file_name = absl::StrFormat("mega-v3-%d.leveldb", i);
     leveldb::DB* db;
     leveldb::Status status = leveldb::DB::Open(options, file_name, &db);
     dbs.push_back(db);
@@ -129,6 +129,7 @@ int main(int argc, char * argv[]) {
 	  string action2s = state.ActionToString(state.CurrentPlayer(), action);
 	  AppendFeatureValues(v, "board", &ex);
 	  AppendFeatureValues({action}, "label", &ex);
+	  AppendFeatureValues(state.LegalActions(), "legal_moves", &ex);
 	  AppendFeatureValues({action2s}, "san", &ex);
 	  AppendFeatureValues({maybe_move->ToLAN()}, "lan", &ex);	  
 	  AppendFeatureValues({state.Board().ToFEN()}, "fen", &ex);
