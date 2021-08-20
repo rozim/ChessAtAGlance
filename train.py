@@ -5,6 +5,7 @@ from absl import app
 from absl import flags
 from absl import logging
 from datetime import datetime
+import warnings
 
 import glob
 import toml
@@ -62,14 +63,18 @@ def df_to_csv(df, fn, float_format='%6.4f'):
 
 class LogLrCallback(Callback):
   def on_epoch_end(self, epoch, logs):
-    logs['lr'] = backend.get_value(self.model.optimizer.lr(epoch))
+    try:
+      logs['lr'] = float(backend.get_value(self.model.optimizer.lr(epoch)))
+    except TypeError:
+      logs['lr'] = float(backend.get_value(self.model.optimizer.lr))
 
 
 def main(_argv):
   flags.mark_flags_as_required(['plan'])
   t1 = time.time()
   tf.compat.v1.logging.set_verbosity(tf.compat.v1.logging.ERROR)
-  os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
+  os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
+  warnings.filterwarnings('ignore', category=Warning)
 
   out_dir = datetime.today().strftime('%Y-%m-%d_%H:%M:%S')
   out_dir = os.path.join('results', out_dir)
@@ -96,8 +101,13 @@ def main(_argv):
       m.summary()
   os.chmod(fn, 0o444)
 
+  callbacks = [TerminateOnNaN(),
+               LogLrCallback()]
+  
   tplan = plan.train
-  lr = create_lr_schedule(tplan)
+  (lr_callback, lr) = create_lr_schedule(tplan)
+  if lr_callback:
+    callbacks.append(lr_callback)
   # lr = CosineDecayRestarts(initial_learning_rate=tplan.lr,
   #                          first_decay_steps=tplan.first_decay_steps,
   #                          t_mul=1,
@@ -116,8 +126,7 @@ def main(_argv):
   #tf.keras.metrics.Precision(top_k=3, name='p_3'),
   #tf.keras.metrics.Recall(top_k=3, name='r_3')])
 
-  callbacks = [TerminateOnNaN(),
-               LogLrCallback()]
+
 
   best_path = os.path.join(out_dir, 'best.model')
   callbacks.append(BestNModelCheckpoint(
@@ -126,7 +135,7 @@ def main(_argv):
     model='max',
     max_to_keep=1,
     save_weights_only=False,
-    verbose=1))
+    verbose=0))
 
   history = m.fit(x=ds1,
                   epochs=tplan.epochs,
