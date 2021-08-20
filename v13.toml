@@ -17,25 +17,21 @@ dropout = 0.0
 top_tower = [1024]
 
 num_filters = 64
-num_resnet_cnn = 2
+num_resnet_cnn = 4
 do_flatten1x1 = true
 
 bn_momentum = 0.99
 
 [train]
 optimizer = 'Adam'
-#epochs = 100
-epochs = 10
+epochs = 200
 
-#steps_per_epoch = 50
-steps_per_epoch = 2
-#validation_steps = 25
-validation_steps = 2
-test_steps = 2
-#test_steps = 128
+steps_per_epoch = 100
+validation_steps = 25
+test_steps = 256
 
 lr_schedule = 'warm_linear'
 lr = 0.01
-warmup = 5
+warmup = 10
 
 
