@@ -40,7 +40,6 @@ def create_model(mplan):
 
   my_bn = functools.partial(BatchNormalization, momentum=mplan.bn_momentum)
 
-
   my_activation = functools.partial(Activation, mplan.activation)
   my_dropout = functools.partial(Dropout, mplan.dropout)
 
@@ -84,7 +83,6 @@ def create_model(mplan):
       if mplan.dropout > 0.0:
         x = my_dropout(name=f'drop_{i}b')(x)
         
-  # tbd: 1x1 cnn first?
   if mplan.do_flatten1x1:
     x = Conv2D(
       filters=mplan.num_filters,
