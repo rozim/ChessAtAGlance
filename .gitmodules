@@ -7,3 +7,6 @@
 [submodule "tf_utils"]
 	path = tf_utils
 	url = https://github.com/schustmi/tf_utils.git
+[submodule "eco"]
+	path = eco
+	url = https://github.com/chimpden/eco.git
