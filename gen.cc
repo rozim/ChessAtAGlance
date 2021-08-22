@@ -64,7 +64,7 @@ void process_stockfish_csv(const string& fn) {
 
   std::vector<leveldb::DB*> dbs;
   for (int i = 0; i < 10; i++) {
-    string file_name = absl::StrFormat("stockfish-d1-%d.leveldb", i);
+    string file_name = absl::StrFormat("stockfish-d3-%d.leveldb", i);
     leveldb::DB* db;
     leveldb::Status status = leveldb::DB::Open(options, file_name, &db);
     dbs.push_back(db);
