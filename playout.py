@@ -1,7 +1,7 @@
 import tensorflow as tf
 import numpy as np
 import pandas as pd
-from absl import app
+
 import sys, os
 from absl import app
 from absl import flags
@@ -17,6 +17,7 @@ FLAGS = flags.FLAGS
 
 flags.DEFINE_string('plan', None, 'toml file')
 flags.DEFINE_string('model', None, '')
+flags.DEFINE_string('fen', None, '')
 
 
 def f2(f):
@@ -38,9 +39,8 @@ def main(argv):
   #print(game.new_initial_state(fen).legal_actions())
   #print(game.new_initial_state().legal_actions()  )
   #fen = 'rnbqk2r/5pb1/p1pppnp1/1p5p/3P4/PPPBPNPP/5P2/RNBQK2R w KQkq - 1 10'
-  fen = None
-  if fen:
-    state = game.new_initial_state(fen)
+  if FLAGS.fen:
+    state = game.new_initial_state(FLAGS.fen)
   else:
     state = game.new_initial_state()
   #help(state)
@@ -110,11 +110,6 @@ def main(argv):
 
 
 # rnbqk2r/5pb1/p1pppnp1/1p5p/3P4/PPPBPNPP/5P2/RNBQK2R w KQkq - 1 10
-
-
-      
-
-
 
 if __name__ == '__main__':
   app.run(main)      
