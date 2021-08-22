@@ -51,7 +51,7 @@ def main(_argv):
     t1 = time.time()
     test_ev = model.evaluate(x=ds3, return_dict=True, steps=steps, verbose=0)
     dt = time.time() - t1
-    print(f'{steps} {test_ev} {int(dt)}')
+    print(f'{steps:4d} {test_ev["loss"]:.4f} {test_ev["accuracy"]:.4f} {int(dt)}s')
     steps *= 2
 
     dres['dt'].append(dt)
