@@ -1,12 +1,29 @@
+data:
+- multiple files
+- use stockfish to generate pseudo-random / diverse positions
+-- play some moves that it wants to
+-- choose some moves at random
+-- in some positions, have it search to generate training data
+-- process, gen.cc
+
 lr:
 - lr warmup
 
 model:
 - review batch norm, bais
+- skip connections in dense 
 
 train:
-- save best model
-- eval best model on test set (along with last model)
 - AdamW (from where?)
+- much longer training
+- eval slices
+- mask legal moves
+- float16 performance
+
+data:
+- legal moves
 
 
+
+review:
+- https://github.com/CSSLab/maia-chess/blob/master/blunder_prediction/maia_chess_backend/maia/tfprocess.py
