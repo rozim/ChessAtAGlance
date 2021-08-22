@@ -1,0 +1,40 @@
+2021-08-19
+----------
+results/2021-08-19_13:15:58 
+100/100 [==============================] - 103s 1s/step - loss: 2.3619 - accuracy: 0.3184 - val_loss: 2.3737 - val_accuracy: 0.3142]
+
+2021-08-20
+----------
+v13.toml
+
+val_accuracy    0.3661 (best)
+                0.3646 (last)
+test_accuracy   0.3718 (best)
+                0.3718 (last)
+
+2021-08-20
+----------
+test_accuracy   0.3847 (best)
+                0.3847 (last)
+python train.py --plan=v14.toml  10599.02s user 7603.45s system 71% cpu 7:05:41.52 total
+
+2021-08-20
+----------
+test_accuracy   0.3851 (best)
+                0.3851 (last)
+python train.py --plan=v15.toml  11724.31s user 9607.58s system 65% cpu 9:02:50.86 total
+
+2021-08-22
+----------
+512/512 [==============================] - 617s 1s/step - loss: 1.8278 - accuracy: 0.4208
+Test: {'loss': 1.8277770280838013, 'accuracy': 0.4208087921142578} 616
+Test (best)
+Open mega-v2-2.snappy
+512/512 [==============================] - 618s 1s/step - loss: 1.8278 - accuracy: 0.4208
+Test/2: {'loss': 1.8277770280838013, 'accuracy': 0.4208087921142578} 620
+Write results/2021-08-21_09:17:33/history.csv
+Write results/2021-08-21_09:17:33/report.txt
+val_accuracy    0.4131 (best)
+                0.4129 (last)
+test_accuracy   0.4208 (best)
+                0.4208 (last)
