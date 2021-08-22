@@ -4,7 +4,7 @@ data:
 -- process, gen.cc
 
 lr:
-- lr warmup
+- min LR
 
 model:
 - review batch norm, bais
@@ -16,6 +16,7 @@ train:
 - eval slices
 - mask legal moves
 - float16 performance
+
 
 data:
 - legal moves
