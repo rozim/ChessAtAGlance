@@ -1,10 +1,13 @@
 #include <stdio.h>
 #include <unistd.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include <memory>
 #include <string>
 #include <vector>
+
+#include "absl/types/optional.h"
 
 #include "polyglot_lib.h"
 
@@ -29,6 +32,8 @@
 #include "absl/container/flat_hash_set.h"
 #include "absl/numeric/int128.h"
 
+#include "gflags/gflags.h"
+
 using namespace std;
 using open_spiel::Game;
 using open_spiel::LoadGame;
@@ -37,16 +42,111 @@ using open_spiel::chess::Move;
 using open_spiel::Action;
 
 using tensorflow::Example;
+using open_spiel::chess::ChessBoard;
+
+DEFINE_string(stockfish_csv, "", "");
+
+void process_stockfish_csv(const string& fn) {
+  setbuf(stdout, NULL);
+  FILE * f = fopen(fn.c_str(), "r");
+  char line[1024];
+  std::shared_ptr<const Game> game = LoadGame("chess");
+  absl::flat_hash_set<absl::uint128> mega;
+  Example ex;
+  std::string ex_out;
+
+  leveldb::Options options;
+  options.create_if_missing = true;
+  options.error_if_exists = true;
+  options.write_buffer_size = 32 * 1024 * 1024;
+  options.block_size = 4 * 1024 * 1024;
+  options.max_file_size = 16 * 1024 * 1024;
+
+  std::vector<leveldb::DB*> dbs;
+  for (int i = 0; i < 10; i++) {
+    string file_name = absl::StrFormat("stockfish-d1-%d.leveldb", i);
+    leveldb::DB* db;
+    leveldb::Status status = leveldb::DB::Open(options, file_name, &db);
+    dbs.push_back(db);
+    assert(status.ok());
+  }
+  
+  while (fgets(line, sizeof(line), f) != NULL) {
+    line[strlen(line)-1] = '\0';
+    char * comma = strchr(line, ',');
+    assert(comma != NULL);
+    *comma = '\0';;
+    char * fen = &line[0];
+    char * lan = comma + 1;
+    //printf("%s %s\n", fen, lan);
+    //fflush(stdout);
+
+    //printf("%d\n", __LINE__);
+    const ChessState state(game, fen);
+    if (state.CurrentPlayer() < 0) {
+      continue; // Draw by rep?
+    }
+    //printf("%d %d\n", __LINE__, state.CurrentPlayer());
+    const auto& board = state.Board();    
+    absl::optional<Move> maybe_move = board.ParseLANMove(lan);
+    SPIEL_CHECK_TRUE(maybe_move);
+    const Action action = MoveToAction(*maybe_move, state.BoardSize());
+    absl::uint128 key = absl::MakeUint128(board.HashValue(), action);
+
+    if (!mega.insert(key).second) {
+      continue;
+    }
+    //printf("%d\n", __LINE__);
+    std::vector<float> v(game->ObservationTensorSize());
+    //printf("%d %d\n", __LINE__, state.CurrentPlayer());
+    state.ObservationTensor(state.CurrentPlayer(),
+			    absl::MakeSpan(v));
+    //printf("%d\n", __LINE__);    
+    string action2s = state.ActionToString(state.CurrentPlayer(), action);
+    //printf("%d\n", __LINE__);    
+    ex.Clear();
+    AppendFeatureValues(v, "board", &ex);
+    AppendFeatureValues({action}, "label", &ex);
+    AppendFeatureValues(state.LegalActions(), "legal_moves", &ex);
+    AppendFeatureValues({action2s}, "san", &ex);
+    AppendFeatureValues({maybe_move->ToLAN()}, "lan", &ex);
+    //printf("%d\n", __LINE__);    
+    AppendFeatureValues({board.ToFEN()}, "fen", &ex);
+    AppendFeatureValues({board.Movenumber()}, "ply", &ex); 
+
+    ex_out.clear();
+    ex.SerializeToString(&ex_out);
+
+    // Mix up bits to address the unproven concern about
+    // 'skey' in leveldb having patterns based on board.HashValue().
+    key = absl::Hash<absl::uint128>{}(key); 	  
+    string skey = absl::StrFormat("%016llx" "%016llx",  Uint128High64(key), Uint128Low64(key)); 
+    dbs[random() % 10]->Put(leveldb::WriteOptions(),
+			    skey,
+			    ex_out);
+  }
+  fclose(f);
+
+  for (int i = 0; i < 10; i++) {
+    delete dbs[i];
+  }
+}
 
 
 int main(int argc, char * argv[]) {
+  gflags::ParseCommandLineFlags(&argc, &argv, true);
+
+  if (!FLAGS_stockfish_csv.empty()) {
+    process_stockfish_csv(FLAGS_stockfish_csv);
+    exit(0);
+  }
+  
   absl::flat_hash_set<absl::uint128> mega;
   time_t t1 = time(0L);
   printf("Begin\n");
   polyglot_init();
   srandom(time(0L));
 
-  //gflags::ParseCommandLineFlags(&argc, &argv, true);
   //google::InitGoogleLogging(argv[0]);
 
   std::shared_ptr<const Game> game = LoadGame("chess");
@@ -60,7 +160,7 @@ int main(int argc, char * argv[]) {
 
   std::vector<leveldb::DB*> dbs;
   for (int i = 0; i < 10; i++) {
-    string file_name = absl::StrFormat("mega-v3-%d.leveldb", i);
+    string file_name = absl::StrFormat("mega-v4-%d.leveldb", i);
     leveldb::DB* db;
     leveldb::Status status = leveldb::DB::Open(options, file_name, &db);
     dbs.push_back(db);
@@ -108,7 +208,7 @@ int main(int argc, char * argv[]) {
 	  continue; // read thru moves
 	}
 
-	ex.Clear();
+
         int move = move_from_san(str, &board);
         if (move == MoveNone || !move_is_legal(move, &board)) {
           printf("illegal move \"%s\" at line %d, column %d\n",
@@ -123,6 +223,7 @@ int main(int argc, char * argv[]) {
 	absl::uint128 key = absl::MakeUint128(state.Board().HashValue(), action);
 
 	if (mega.insert(key).second) {
+	  ex.Clear();	  
 	  std::vector<float> v(game->ObservationTensorSize());
 	  state.ObservationTensor(state.CurrentPlayer(),
 				  absl::MakeSpan(v));
