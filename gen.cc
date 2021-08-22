@@ -78,15 +78,11 @@ void process_stockfish_csv(const string& fn) {
     *comma = '\0';;
     char * fen = &line[0];
     char * lan = comma + 1;
-    //printf("%s %s\n", fen, lan);
-    //fflush(stdout);
 
-    //printf("%d\n", __LINE__);
     const ChessState state(game, fen);
     if (state.CurrentPlayer() < 0) {
       continue; // Draw by rep?
     }
-    //printf("%d %d\n", __LINE__, state.CurrentPlayer());
     const auto& board = state.Board();    
     absl::optional<Move> maybe_move = board.ParseLANMove(lan);
     SPIEL_CHECK_TRUE(maybe_move);
@@ -96,21 +92,16 @@ void process_stockfish_csv(const string& fn) {
     if (!mega.insert(key).second) {
       continue;
     }
-    //printf("%d\n", __LINE__);
     std::vector<float> v(game->ObservationTensorSize());
-    //printf("%d %d\n", __LINE__, state.CurrentPlayer());
     state.ObservationTensor(state.CurrentPlayer(),
 			    absl::MakeSpan(v));
-    //printf("%d\n", __LINE__);    
     string action2s = state.ActionToString(state.CurrentPlayer(), action);
-    //printf("%d\n", __LINE__);    
     ex.Clear();
     AppendFeatureValues(v, "board", &ex);
     AppendFeatureValues({action}, "label", &ex);
     AppendFeatureValues(state.LegalActions(), "legal_moves", &ex);
     AppendFeatureValues({action2s}, "san", &ex);
     AppendFeatureValues({maybe_move->ToLAN()}, "lan", &ex);
-    //printf("%d\n", __LINE__);    
     AppendFeatureValues({board.ToFEN()}, "fen", &ex);
     AppendFeatureValues({board.Movenumber()}, "ply", &ex); 
 
