@@ -27,7 +27,7 @@ LDFLAGS += -L/Users/dave/miniforge3/lib/python3.9/site-packages/tensorflow -lten
 LDFLAGS += -L/opt/homebrew/lib
 LDFLAGS += -lleveldb
 LDFLAGS += -lsnappy
-
+LDFLAGS += -lgflags
 
 all : t gen leveldb_read flatten
 
@@ -36,6 +36,7 @@ t : t.o
 
 gen : gen.o
 	${LD} gen.o ${LDFLAGS} -o ${@}
+	@echo OK
 
 leveldb_read : leveldb_read.o
 	${LD} leveldb_read.o ${LDFLAGS} -o ${@}
