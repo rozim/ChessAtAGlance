@@ -1,9 +1,6 @@
 data:
 - multiple files
 - use stockfish to generate pseudo-random / diverse positions
--- play some moves that it wants to
--- choose some moves at random
--- in some positions, have it search to generate training data
 -- process, gen.cc
 
 lr:
