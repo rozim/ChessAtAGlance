@@ -11,7 +11,8 @@ from absl import logging
 from random import random, choice
 
 FLAGS = flags.FLAGS
-flags.DEFINE_integer('n', 10, '')
+flags.DEFINE_integer('n', 10, 'number')
+flags.DEFINE_integer('d', 1, 'search depth')
 
 
 STOCKFISH = '/opt/homebrew/bin/stockfish'
@@ -60,9 +61,9 @@ def main(argv):
   while nf < FLAGS.n:
     for ply, fen, move in play1(engine,
                                 choice(ecos),
-                                chess.engine.Limit(depth=1),
+                                chess.engine.Limit(depth=FLAGS.d),
                                 pct_random=0.10,
-                                pct_example=0.10):
+                                pct_example=0.20):
       sfen = ' '.join(fen.split(' ')[0:3])
       if sfen in all_fens:
         continue
