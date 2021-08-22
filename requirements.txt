@@ -1,10 +1,10 @@
-toml
-pandas
-numpy
-leveldb
-open_spiel
-matplotlib
+chess
 gin
+leveldb
+matplotlib
+numpy
+open_spiel
+pandas
 python-snappy
-
+toml
 
