@@ -342,3 +342,11 @@ python train.py --plan=v15.toml  11724.31s user 9607.58s system 65% cpu 9:02:50.
 # https://stackoverflow.com/questions/52179857/parallelize-tf-from-generator-using-tf-contrib-data-parallel-interleave
 
 TBD: tf.py_function?
+
+------------------------------------------------------------
+2021-08-24
+
+disaster, something went wrong, val loss huge, can't narrow down
+with git bisect
+
+git bisect good 7d4e0beedc0a459597311528cb9e45b380b097c8
