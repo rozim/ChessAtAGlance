@@ -30,7 +30,7 @@ def create_warm_linear_schedule(tplan):
       return lr * (epoch / train_warmup)
     else:
       pct = (epoch - train_warmup) / (train_epochs - train_warmup)
-      pct *= tplan.lr_max_decay_factor
+      pct *= tplan.get('lr_max_decay_factor', 1.0)
       return lr - (pct * lr)
   return LearningRateScheduler(_create_warm_linear_schedule)
 
