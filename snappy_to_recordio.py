@@ -4,7 +4,11 @@ import snappy
 import time
 
 from absl import app
+from absl import flags
 
+FLAGS = flags.FLAGS
+flags.DEFINE_string('fn_in', None, '')
+flags.DEFINE_string('fn_out', None, '')
 
 def unsnappy(fn):
   with open(fn, 'rb', 8 * 1024 * 1024) as f:
@@ -20,11 +24,18 @@ def unsnappy(fn):
 
 
 def main(argv):
+  flags.mark_flags_as_required(['fn_in', 'fn_out'])
+  assert FLAGS.fn_in != FLAGS.fn_out
   n = 0
-  mod = 1
+  mod = 16 * 1024
   t1 = time.time()
-  with tf.io.TFRecordWriter('mega-v3-0.recordio', 'ZLIB') as rio:
-    for ex in unsnappy('mega-v3-0.snappy'):
+
+  opts = tf.io.TFRecordOptions(
+    compression_type='ZLIB', 
+    output_buffer_size=(4 * 1024 * 1024))
+
+  with tf.io.TFRecordWriter(FLAGS.fn_out, opts) as rio:
+    for ex in unsnappy(FLAGS.fn_in):
       rio.write(ex.SerializeToString())
       n += 1
       if n % mod == 0:
