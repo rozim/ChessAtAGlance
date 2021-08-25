@@ -1,8 +1,8 @@
 
 [data]
-train    = 'stockfish-d1-0.snappy'
-validate = 'stockfish-d1-1.snappy'
-test     = 'stockfish-d1-2.snappy'
+train    = ['mega-v3-0.snappy', 'stockfish-d1-0.snappy', 'stockfish-d3-0.snappy']
+validate = ['mega-v3-1.snappy', 'stockfish-d1-1.snappy', 'stockfish-d3-1.snappy']
+test     = ['mega-v3-2.snappy', 'stockfish-d1-2.snappy', 'stockfish-d3-21.snappy']
 
 shuffle = 10240
 batch = 1024
@@ -33,4 +33,3 @@ lr_schedule = 'warm_linear'
 lr = 0.01
 warmup = 5
 lr_max_decay_factor = 0.5
-
