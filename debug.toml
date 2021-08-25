@@ -1,8 +1,8 @@
 
 [data]
-train    = 'mega-v2-0.snappy'
-validate = 'mega-v2-1.snappy'
-test     = 'mega-v2-2.snappy'
+train    = 'mega-v3-0.snappy'
+validate = 'mega-v3-1.snappy'
+test     = 'mega-v3-2.snappy'
 
 shuffle = 10240
 batch = 1024
@@ -15,8 +15,8 @@ dropout = 0.0
 
 top_tower = [1024]
 
-num_filters = 64
-num_resnet_cnn = 8
+num_filters = 32
+num_resnet_cnn = 4
 do_flatten1x1 = true
 
 bn_momentum = 0.99
