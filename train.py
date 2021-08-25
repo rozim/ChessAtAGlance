@@ -82,7 +82,7 @@ def main(_argv):
   os.mkdir(out_dir)  
   
   plan = load_plan(FLAGS.plan)
-  fn = os.path.join(out_dir, FLAGS.plan)
+  fn = os.path.join(out_dir, os.path.basename(FLAGS.plan))
   print(f'Write {fn}')
   with open(fn, 'w') as f:
     toml.dump(plan, f)
