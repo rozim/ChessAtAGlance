@@ -38,3 +38,5 @@ val_accuracy    0.4131 (best)
                 0.4129 (last)
 test_accuracy   0.4208 (best)
                 0.4208 (last)
+
+---testing--
