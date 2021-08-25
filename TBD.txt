@@ -1,7 +1,7 @@
 data:
 
 lr:
-- min LR
+
 
 model:
 - review batch norm, bais
