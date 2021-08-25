@@ -1,0 +1,36 @@
+
+[data]
+train    = 'stockfish-d1-0.snappy'
+validate = 'stockfish-d1-1.snappy'
+test     = 'stockfish-d1-2.snappy'
+
+shuffle = 10240
+batch = 1024
+prefetch = 8
+
+[model]
+l2 = 0.0
+activation = 'relu'
+dropout = 0.0
+
+top_tower = [1024]
+
+num_filters = 128
+num_resnet_cnn = 16
+do_flatten1x1 = true
+
+bn_momentum = 0.99
+
+[train]
+optimizer = 'Adam'
+epochs = 10
+
+steps_per_epoch = 10
+validation_steps = 10
+test_steps = 100
+
+lr_schedule = 'warm_linear'
+lr = 0.01
+warmup = 2
+
+

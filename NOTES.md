@@ -288,3 +288,57 @@ val_accuracy    0.3661 (best)
                 0.3646 (last)
 test_accuracy   0.3718 (best)
                 0.3718 (last)
+
+-----
+Epoch 200/200
+100/100 [==============================] - 124s 1s/step - loss: 1.9918 - accuracy: 0.3850 - val_loss: 2.0192 - val_accuracy: 0.3794
+Write results/2021-08-20_11:55:04/last.model
+Test (last)
+256/256 [==============================] - 202s 790ms/step - loss: 2.0019 - accuracy: 0.3847
+Test: {'loss': 2.0018813610076904, 'accuracy': 0.38466644287109375} 202
+Test (best)
+Open mega-v2-2.snappy
+256/256 [==============================] - 205s 798ms/step - loss: 2.0019 - accuracy: 0.3847
+Test/2: {'loss': 2.0018813610076904, 'accuracy': 0.38466644287109375} 205
+Write results/2021-08-20_11:55:04/history.csv
+Write results/2021-08-20_11:55:04/report.txt
+val_accuracy    0.3798 (best)
+                0.3794 (last)
+test_accuracy   0.3847 (best)
+                0.3847 (last)
+python train.py --plan=v14.toml  10599.02s user 7603.45s system 71% cpu 7:05:41.52 total
+(tf25) dave@daves-air ChessAtAGlance %
+------------------------------------------------------------
+
+Epoch 200/200
+100/100 [==============================] - 155s 2s/step - loss: 1.9854 - accuracy: 0.3870 - val_loss: 2.0118 - val_accuracy: 0.3799
+Write results/2021-08-20_23:56:36/last.model
+Test (last)
+256/256 [==============================] - 220s 860ms/step - loss: 1.9956 - accuracy: 0.3851
+Test: {'loss': 1.9955915212631226, 'accuracy': 0.38512420654296875} 220
+Test (best)
+Open mega-v2-2.snappy
+256/256 [==============================] - 222s 868ms/step - loss: 1.9956 - accuracy: 0.3851
+Test/2: {'loss': 1.9955915212631226, 'accuracy': 0.38512420654296875} 224
+Write results/2021-08-20_23:56:36/history.csv
+Write results/2021-08-20_23:56:36/report.txt
+val_accuracy    0.3806 (best)
+                0.3799 (last)
+test_accuracy   0.3851 (best)
+                0.3851 (last)
+python train.py --plan=v15.toml  11724.31s user 9607.58s system 65% cpu 9:02:50.86 total
+
+------------------------------------------------------------
+2021-08-23
+
+#def wrap_generator(filename):
+#  return tf.data.Dataset.from_generator(parse_file(filename), [tf.int32, tf.int32])
+
+# files = tf.data.Dataset.from_tensor_slices(files_to_process)
+# dataset = files.apply(tf.contrib.data.parallel_interleave(wrap_generator, cycle_length=N))
+# dataset = dataset.flat_map(lambda *x: tf.data.Dataset.from_tensor_slices(x))
+# dataset = dataset.shuffle(shuffle_size).batch(batch_size).prefetch(2)
+# it = dataset.make_one_shot_iterator()
+# https://stackoverflow.com/questions/52179857/parallelize-tf-from-generator-using-tf-contrib-data-parallel-interleave
+
+TBD: tf.py_function?
