@@ -4,7 +4,7 @@ lr:
 
 
 model:
-- review batch norm, bais
+- review batch norm, bias
 - skip connections in dense 
 
 train:
@@ -14,9 +14,12 @@ train:
 - mask legal moves
 - float16 performance
 
+eval:
+- weigh by #legal moves
+
 
 data:
-- legal moves
+
 
 
 
