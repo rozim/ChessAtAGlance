@@ -1,7 +1,4 @@
 data:
-- multiple files
-- use stockfish to generate pseudo-random / diverse positions
--- process, gen.cc
 
 lr:
 - min LR
