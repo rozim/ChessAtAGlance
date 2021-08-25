@@ -1,4 +1,6 @@
 data:
+- ugh, may need to convert to TFRecord to see if code can run faster and more parallel
+-- need py version of flatten.cc using tf record writer
 
 lr:
 
