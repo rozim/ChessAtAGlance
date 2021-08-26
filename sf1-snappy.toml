@@ -11,7 +11,7 @@ train    = ['stockfish-d1-0.snappy',
 validate = 'stockfish-d1-8.snappy'
 test     = 'stockfish-d1-9.snappy'
 
-shuffle = 10240
+shuffle = 1024
 batch = 1024
 prefetch = 2
 
@@ -30,11 +30,11 @@ bn_momentum = 0.99
 
 [train]
 optimizer = 'Adam'
-epochs = 100
+epochs = 10
 
-steps_per_epoch = 200
-validation_steps = 10
-test_steps = 100
+steps_per_epoch = 10
+validation_steps = 1
+test_steps = 1
 
 lr_schedule = 'warm_linear'
 lr = 0.01

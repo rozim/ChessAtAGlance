@@ -14,6 +14,16 @@ BOARD_FLOATS = 1280
 
 AUTOTUNE = tf.data.AUTOTUNE
 
+FEATURES = {
+  'board': tf.io.FixedLenFeature(BOARD_SHAPE, tf.float32),
+  'label': tf.io.FixedLenFeature([], tf.int64)
+}
+
+
+def _extract(blob):
+  t = tf.io.parse_example(blob, features=FEATURES)
+  return t['board'], t['label']
+
 
 def gen_snappy(fn):
   for ex in unsnappy(fn):
@@ -25,7 +35,7 @@ def gen_snappy(fn):
     yield (board, action)
     
   
-def create_input_generator(dplan, fns, is_train=True, verbose=True):
+def create_input_generator_rio(dplan, fns, is_train=True, verbose=True):
   if type(fns) == type(""):
     fns = [fns]
   if verbose:
@@ -34,6 +44,32 @@ def create_input_generator(dplan, fns, is_train=True, verbose=True):
   datasets = []
   for fn in fns:
     assert os.path.isfile(fn), fn
+    assert fn.endswith('.recordio')
+  ds = tf.data.TFRecordDataset(fns, 'ZLIB', num_parallel_reads=len(fns))
+  if is_train:
+    ds = ds.shuffle(dplan.shuffle)  
+  ds = ds.repeat()
+  ds = ds.batch(dplan.batch,
+                num_parallel_calls=AUTOTUNE,
+                deterministic=False) # performance
+  ds = ds.map(_extract)
+  ds = ds.prefetch(dplan.prefetch)
+  return ds
+
+
+def create_input_generator(dplan, fns, is_train=True, verbose=True):
+  if type(fns) == type(""):
+    fns = [fns]
+  if fns[0].endswith('.recordio'):
+    return create_input_generator_rio(dplan, fns, is_train, verbose)
+  
+  if verbose:
+    print(f'Open {fns}')
+
+  datasets = []
+  for fn in fns:
+    assert os.path.isfile(fn), fn
+    assert fn.endswith('.snappy')
     gen1 = functools.partial(gen_snappy, fn)
     datasets.append(
       tf.data.Dataset.from_generator(gen1,
