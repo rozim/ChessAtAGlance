@@ -44,7 +44,7 @@ def main(argv):
   else:
     assert FLAGS.what == 1
     print('DS: new')
-    ds = tf.data.TFRecordDataset([FN1], 'ZLIB')
+    ds = tf.data.TFRecordDataset([FN1], 'ZLIB') # buffer_size doesn't help
     ds = ds.shuffle(1024)
     ds = ds.batch(FLAGS.bs)
     ds = ds.map(_extract)
