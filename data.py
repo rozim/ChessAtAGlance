@@ -77,7 +77,7 @@ def create_input_generator(dplan, fns, is_train=True, verbose=True, do_repeat=Tr
                                         output_types=('float32', 'int64'),
                                         output_shapes=(BOARD_SHAPE, []))
     if do_repeat:
-      ds = ds..repeat())    
+      ds = ds.repeat())    
     datasets.append(ds)
     del ds
     
