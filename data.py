@@ -58,11 +58,11 @@ def create_input_generator_rio(dplan, fns, is_train=True, verbose=True, do_repea
   return ds
 
 
-def create_input_generator(dplan, fns, is_train=True, verbose=True):
+def create_input_generator(dplan, fns, is_train=True, verbose=True, do_repeat=True):
   if type(fns) == type(""):
     fns = [fns]
   if fns[0].endswith('.recordio'):
-    return create_input_generator_rio(dplan, fns, is_train, verbose)
+    return create_input_generator_rio(dplan, fns, is_train, verbose, do_repeat)
   
   if verbose:
     print(f'Open {fns}')
@@ -72,10 +72,14 @@ def create_input_generator(dplan, fns, is_train=True, verbose=True):
     assert os.path.isfile(fn), fn
     assert fn.endswith('.snappy')
     gen1 = functools.partial(gen_snappy, fn)
-    datasets.append(
-      tf.data.Dataset.from_generator(gen1,
-                                     output_types=('float32', 'int64'),
-                                     output_shapes=(BOARD_SHAPE, [])).repeat())
+
+    ds = tf.data.Dataset.from_generator(gen1,
+                                        output_types=('float32', 'int64'),
+                                        output_shapes=(BOARD_SHAPE, []))
+    if do_repeat:
+      ds = ds..repeat())    
+    datasets.append(ds)
+    del ds
     
   ds = tf.data.experimental.sample_from_datasets(
     datasets,
