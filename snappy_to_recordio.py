@@ -27,7 +27,7 @@ def main(argv):
   flags.mark_flags_as_required(['fn_in', 'fn_out'])
   assert FLAGS.fn_in != FLAGS.fn_out
   n = 0
-  mod = 16 * 1024
+  mod = 64 * 1024
   t1 = time.time()
 
   opts = tf.io.TFRecordOptions(

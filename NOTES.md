@@ -350,3 +350,10 @@ disaster, something went wrong, val loss huge, can't narrow down
 with git bisect
 
 git bisect good 7d4e0beedc0a459597311528cb9e45b380b097c8
+
+------------------------------------------------------------
+2021-08-25
+
+TFRecord format seems 60x as fast in benchmark.
+Wow.
+
