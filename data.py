@@ -35,7 +35,7 @@ def gen_snappy(fn):
     yield (board, action)
     
   
-def create_input_generator_rio(dplan, fns, is_train=True, verbose=True):
+def create_input_generator_rio(dplan, fns, is_train=True, verbose=True, do_repeat=True):
   if type(fns) == type(""):
     fns = [fns]
   if verbose:
@@ -47,8 +47,9 @@ def create_input_generator_rio(dplan, fns, is_train=True, verbose=True):
     assert fn.endswith('.recordio')
   ds = tf.data.TFRecordDataset(fns, 'ZLIB', num_parallel_reads=len(fns))
   if is_train:
-    ds = ds.shuffle(dplan.shuffle)  
-  ds = ds.repeat()
+    ds = ds.shuffle(dplan.shuffle)
+  if do_repeat:
+    ds = ds.repeat()
   ds = ds.batch(dplan.batch,
                 num_parallel_calls=AUTOTUNE,
                 deterministic=False) # performance

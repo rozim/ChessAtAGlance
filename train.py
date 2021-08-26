@@ -91,7 +91,7 @@ def main(_argv):
   dplan = plan.data
   ds1 = create_input_generator(dplan, dplan.train, is_train=True)
   ds2 = create_input_generator(dplan, dplan.validate, is_train=False)
-  ds3 = create_input_generator(dplan, dplan.test, is_train=False) if 'test' in dplan else None
+  ds3 = create_input_generator(dplan, dplan.test, is_train=False, do_repeat=False) if 'test' in dplan else None
 
   m = create_model(plan.model)
   fn = os.path.join(out_dir, 'model-summary.txt')
