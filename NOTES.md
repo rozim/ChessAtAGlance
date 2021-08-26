@@ -189,7 +189,7 @@ eof crash, but hit 0.3176
 poch 166/200
  17/100 [====>.........................] - ETA: 36s - loss: 2.3463 - accuracy: 0.3176 Traceback (most recent call last):
   File "/Users/dave/Projects/ChessAtAGlance/train.py", line 187, in <module>
-    
+
   File "/Users/dave/miniforge3/envs/tf25/lib/python3.9/site-packages/absl/app.py", line 300, in run
     _run_main(main, args)
   File "/Users/dave/miniforge3/envs/tf25/lib/python3.9/site-packages/absl/app.py", line 251, in _run_main
@@ -357,3 +357,9 @@ git bisect good 7d4e0beedc0a459597311528cb9e45b380b097c8
 TFRecord format seems 60x as fast in benchmark.
 Wow.
 
+------------------------------------------------------------
+2021-08-26
+==========
+
+shard by FEN
+LD_LIBRARY_PATH=/Users/dave/Projects/open_spiel/build:/Users/dave/miniforge3/lib/python3.9/site-packages/tensorflow ./gen --shard_random=false ~/Projects/ChessData/mega2400_part_*.pgn

@@ -45,6 +45,7 @@ using tensorflow::Example;
 using open_spiel::chess::ChessBoard;
 
 DEFINE_string(stockfish_csv, "", "");
+DEFINE_bool(shard_random, true, "Else shard by FEN/boad hash");
 
 void process_stockfish_csv(const string& fn) {
   setbuf(stdout, NULL);
@@ -70,7 +71,7 @@ void process_stockfish_csv(const string& fn) {
     dbs.push_back(db);
     assert(status.ok());
   }
-  
+
   while (fgets(line, sizeof(line), f) != NULL) {
     line[strlen(line)-1] = '\0';
     char * comma = strchr(line, ',');
@@ -83,7 +84,7 @@ void process_stockfish_csv(const string& fn) {
     if (state.CurrentPlayer() < 0) {
       continue; // Draw by rep?
     }
-    const auto& board = state.Board();    
+    const auto& board = state.Board();
     absl::optional<Move> maybe_move = board.ParseLANMove(lan);
     SPIEL_CHECK_TRUE(maybe_move);
     const Action action = MoveToAction(*maybe_move, state.BoardSize());
@@ -103,15 +104,15 @@ void process_stockfish_csv(const string& fn) {
     AppendFeatureValues({action2s}, "san", &ex);
     AppendFeatureValues({maybe_move->ToLAN()}, "lan", &ex);
     AppendFeatureValues({board.ToFEN()}, "fen", &ex);
-    AppendFeatureValues({board.Movenumber()}, "ply", &ex); 
+    AppendFeatureValues({board.Movenumber()}, "ply", &ex);
 
     ex_out.clear();
     ex.SerializeToString(&ex_out);
 
     // Mix up bits to address the unproven concern about
     // 'skey' in leveldb having patterns based on board.HashValue().
-    key = absl::Hash<absl::uint128>{}(key); 	  
-    string skey = absl::StrFormat("%016llx" "%016llx",  Uint128High64(key), Uint128Low64(key)); 
+    key = absl::Hash<absl::uint128>{}(key);
+    string skey = absl::StrFormat("%016llx" "%016llx",  Uint128High64(key), Uint128Low64(key));
     dbs[random() % 10]->Put(leveldb::WriteOptions(),
 			    skey,
 			    ex_out);
@@ -131,7 +132,7 @@ int main(int argc, char * argv[]) {
     process_stockfish_csv(FLAGS_stockfish_csv);
     exit(0);
   }
-  
+
   absl::flat_hash_set<absl::uint128> mega;
   time_t t1 = time(0L);
   printf("Begin\n");
@@ -151,7 +152,7 @@ int main(int argc, char * argv[]) {
 
   std::vector<leveldb::DB*> dbs;
   for (int i = 0; i < 10; i++) {
-    string file_name = absl::StrFormat("mega-v4-%d.leveldb", i);
+    string file_name = absl::StrFormat("mega-v5-%d.leveldb", i);
     leveldb::DB* db;
     leveldb::Status status = leveldb::DB::Open(options, file_name, &db);
     dbs.push_back(db);
@@ -171,7 +172,7 @@ int main(int argc, char * argv[]) {
     string ex_out;
     long mod = 1;
     while (pgn_next_game(&pgn)) {
-      games++; 
+      games++;
       if (games % mod == 0) {
 	time_t el = time(0L) - t1;
 	if (el == 0) {
@@ -192,13 +193,12 @@ int main(int argc, char * argv[]) {
       board_start(&board);
       char str[256];
       int ply = -1;
-      
+
       while (pgn_next_move(&pgn, str, 256)) {
 	ply++;
 	if (state.CurrentPlayer() < 0) { // maybe draw by rep recognized by spiel
 	  continue; // read thru moves
 	}
-
 
         int move = move_from_san(str, &board);
         if (move == MoveNone || !move_is_legal(move, &board)) {
@@ -214,7 +214,7 @@ int main(int argc, char * argv[]) {
 	absl::uint128 key = absl::MakeUint128(state.Board().HashValue(), action);
 
 	if (mega.insert(key).second) {
-	  ex.Clear();	  
+	  ex.Clear();
 	  std::vector<float> v(game->ObservationTensorSize());
 	  state.ObservationTensor(state.CurrentPlayer(),
 				  absl::MakeSpan(v));
@@ -223,9 +223,9 @@ int main(int argc, char * argv[]) {
 	  AppendFeatureValues({action}, "label", &ex);
 	  AppendFeatureValues(state.LegalActions(), "legal_moves", &ex);
 	  AppendFeatureValues({action2s}, "san", &ex);
-	  AppendFeatureValues({maybe_move->ToLAN()}, "lan", &ex);	  
+	  AppendFeatureValues({maybe_move->ToLAN()}, "lan", &ex);
 	  AppendFeatureValues({state.Board().ToFEN()}, "fen", &ex);
-	  AppendFeatureValues({ply}, "ply", &ex); 
+	  AppendFeatureValues({ply}, "ply", &ex);
 	  approx_bytes += v.size() + 4 + 4 + 4 + 4 + 32;
 
 	  ex_out.clear();
@@ -233,11 +233,14 @@ int main(int argc, char * argv[]) {
 
 	  // Mix up bits to address the unproven concern about
 	  // 'skey' in leveldb having patterns based on state.Board().HashValue().
-	  key = absl::Hash<absl::uint128>{}(key); 	  
-	  string skey = absl::StrFormat("%016llx" "%016llx",  Uint128High64(key), Uint128Low64(key)); 
-	  dbs[random() % 10]->Put(leveldb::WriteOptions(),
-				  skey,
-				  ex_out);
+	  key = absl::Hash<absl::uint128>{}(key);
+	  string skey = absl::StrFormat("%016llx" "%016llx",  Uint128High64(key), Uint128Low64(key));
+	  int shard = FLAGS_shard_random ?
+	    random() % 10 :
+	    state.Board().HashValue() % 10; // Group same FEN into same shard.
+	  dbs[shard]->Put(leveldb::WriteOptions(),
+			  skey,
+			  ex_out);
 	} else {
 	  dups++;
 	}
