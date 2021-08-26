@@ -44,3 +44,4 @@ gen
 flatten
 
 nohup.out
+*.recordio
