@@ -24,6 +24,7 @@ flags.DEFINE_integer('n', 10, '')
 flags.DEFINE_integer('bs', 1024, '')
 flags.DEFINE_integer('what', None, '')
 
+#@tf.function
 def _extract(blob):
   t = tf.io.parse_example(blob, features=FEATURES)
   return t['board'], t['label']
