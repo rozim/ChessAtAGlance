@@ -39,4 +39,26 @@ val_accuracy    0.4131 (best)
 test_accuracy   0.4208 (best)
                 0.4208 (last)
 
+------------------------------------------------------------
+2021-08-25
+==========
+python train.py --plan=sf3.toml
+
+100/100 [==============================] - 13s 128ms/step - loss: 0.1937 - accuracy: 0.9324 - val_loss: 13.3963 - val_accuracy: 0.1909
+Epoch 300/300
+100/100 [==============================] - 13s 128ms/step - loss: 0.1966 - accuracy: 0.9324 - val_loss: 13.2178 - val_accuracy: 0.1893
+Write results/2021-08-26_07:07:43/last.model
+Test (last)
+1000/1000 [==============================] - 40s 40ms/step - loss: 13.2518 - accuracy: 0.1873
+Test: {'loss': 13.251764297485352, 'accuracy': 0.18733496963977814} 39
+Test (best)
+Open ['stockfish-d3-9.recordio']
+1000/1000 [==============================] - 40s 40ms/step - loss: 13.2518 - accuracy: 0.1873
+Test/2: {'loss': 13.251764297485352, 'accuracy': 0.18733496963977814} 41
+Write results/2021-08-26_07:07:43/history.csv
+Write results/2021-08-26_07:07:43/report.txt
+val_accuracy    0.2303 (best)
+                0.1893 (last)
+test_accuracy   0.1873 (best)
+                0.1873 (last)
 
