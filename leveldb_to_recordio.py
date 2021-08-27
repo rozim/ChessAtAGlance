@@ -1,7 +1,8 @@
 import struct
 import tensorflow as tf
-import snappy
+import leveldb
 import time
+import sys, os
 
 from absl import app
 from absl import flags
@@ -9,19 +10,6 @@ from absl import flags
 FLAGS = flags.FLAGS
 flags.DEFINE_string('fn_in', None, '')
 flags.DEFINE_string('fn_out', None, '')
-
-def unsnappy(fn):
-  with open(fn, 'rb', 8 * 1024 * 1024) as f:
-    unpack = struct.unpack
-    uncompress  = snappy.uncompress    
-    read = f.read    
-    while True:
-      blob = read(4)
-      if len(blob) == 0:
-        return
-      n = unpack('@i', blob)[0]
-      yield tf.train.Example().FromString(snappy.uncompress(read(n)))
-
 
 def main(argv):
   flags.mark_flags_as_required(['fn_in', 'fn_out'])
@@ -31,12 +19,14 @@ def main(argv):
   t1 = time.time()
 
   opts = tf.io.TFRecordOptions(
-    compression_type='ZLIB', 
+    compression_type='ZLIB',
     output_buffer_size=(4 * 1024 * 1024))
 
   with tf.io.TFRecordWriter(FLAGS.fn_out, opts) as rio:
-    for ex in unsnappy(FLAGS.fn_in):
-      rio.write(ex.SerializeToString())
+    db = leveldb.LevelDB(FLAGS.fn_in)
+    for ent in db.RangeIter():
+      # Yuck. How to decode bytearray w/o parsing Example.
+      rio.write(tf.train.Example().FromString(ent[1]).SerializeToString())
       n += 1
       if n % mod == 0:
         print(n, int(time.time() - t1))
@@ -45,4 +35,4 @@ def main(argv):
   print('done', n, int(time.time() - t1))
 
 if __name__ == '__main__':
-  app.run(main)          
+  app.run(main)
