@@ -1,6 +1,6 @@
 2021-08-19
 ----------
-results/2021-08-19_13:15:58 
+results/2021-08-19_13:15:58
 100/100 [==============================] - 103s 1s/step - loss: 2.3619 - accuracy: 0.3184 - val_loss: 2.3737 - val_accuracy: 0.3142]
 
 2021-08-20
@@ -62,3 +62,24 @@ val_accuracy    0.2303 (best)
 test_accuracy   0.1873 (best)
                 0.1873 (last)
 
+
+------------------------------------------------------------
+2021-08-27
+==========
+python train.py --plan=v16-mega-v5.toml
+
+100/100 [==============================] - 46s 458ms/step - loss: 1.9625 - accuracy: 0.3919 - val_loss: 1.9617 - val_accuracy: 0.3905
+Write results/2021-08-27_09:49:01/last.model
+Test (last)
+1024/1024 [==============================] - 108s 105ms/step - loss: 1.9585 - accuracy: 0.3929
+Test: {'loss': 1.9584932327270508, 'accuracy': 0.3929023742675781} 107
+Test (best)
+Open ['mega-v5-9.recordio']
+1024/1024 [==============================] - 108s 105ms/step - loss: 1.9585 - accuracy: 0.3929
+Test/2: {'loss': 1.9584932327270508, 'accuracy': 0.3929023742675781} 110
+Write results/2021-08-27_09:49:01/history.csv
+Write results/2021-08-27_09:49:01/report.txt
+val_accuracy    0.3911 (best)
+                0.3905 (last)
+test_accuracy   0.3929 (best)
+                0.3929 (last)
