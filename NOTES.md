@@ -155,7 +155,7 @@ see this later
 https://lczero.org/dev/wiki/technical-explanation-of-leela-chess-zero/
 
 warmup
-https://github.com/tensorflow/models/blob/master/official/nlp/optimization.py
+bhttps://github.com/tensorflow/models/blob/master/official/nlp/optimization.py
 
 adamw
 https://github.com/tensorflow/addons/blob/master/tensorflow_addons/optimizers/weight_decay_optimizers.py
@@ -363,3 +363,10 @@ Wow.
 
 shard by FEN
 LD_LIBRARY_PATH=/Users/dave/Projects/open_spiel/build:/Users/dave/miniforge3/lib/python3.9/site-packages/tensorflow ./gen --shard_random=false ~/Projects/ChessData/mega2400_part_*.pgn
+...
+game: 2810000 [Zombirt,F | Brzezinski,M] | write=169019751 dup=57587073 | 19791 (s), 141 (gps)
+All done, games=2813613
+...
+Close 9 | 19836 (s)
+Approx bytes: 224740380192
+All done after 19836

@@ -45,3 +45,4 @@ flatten
 
 nohup.out
 *.recordio
+leveldb_read
