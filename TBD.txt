@@ -1,13 +1,12 @@
 data:
-- ugh, may need to convert to TFRecord to see if code can run faster and more parallel
--- need py version of flatten.cc using tf record writer
+- gen sf alternatives
 
 lr:
 
 
 model:
 - review batch norm, bias
-- skip connections in dense 
+- skip connections in dense
 
 train:
 - AdamW (from where?)
@@ -18,12 +17,6 @@ train:
 
 eval:
 - weigh by #legal moves
-
-
-data:
-
-
-
 
 review:
 - https://github.com/CSSLab/maia-chess/blob/master/blunder_prediction/maia_chess_backend/maia/tfprocess.py
