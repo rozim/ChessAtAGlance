@@ -50,10 +50,16 @@ def create_input_generator_rio(dplan, fns, is_train=True, verbose=True, do_repea
     ds = ds.shuffle(dplan.shuffle)
   if do_repeat:
     ds = ds.repeat()
-  ds = ds.batch(dplan.batch,
-                num_parallel_calls=AUTOTUNE,
-                deterministic=False) # performance
-  ds = ds.map(_extract)
+  if dplan.get('swap_batch_map_order', False):
+    ds = ds.batch(dplan.batch,
+                  num_parallel_calls=AUTOTUNE,
+                  deterministic=False)
+    ds = ds.map(_extract, num_parallel_calls=AUTOTUNE)
+  else:
+    ds = ds.batch(dplan.batch,
+                  num_parallel_calls=AUTOTUNE,
+                  deterministic=False) # performance
+    ds = ds.map(_extract)
   ds = ds.prefetch(dplan.prefetch)
   return ds
 

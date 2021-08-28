@@ -478,3 +478,19 @@ on_test_batch    |     2500 | 70.09
 on_test          |       25 | 70.36
 on_epoch         |       25 | 250.98
 on_train         |        1 | 251.05
+
+- prefetch_to_device=true, prefetch=0, buffer_size=16
+on_train_batch   |     2500 | 147.39
+on_test_batch    |     2500 | 70.51
+on_test          |       25 | 70.79
+on_epoch         |       25 | 254.63
+on_train         |        1 | 254.69
+
+- prefetch_to_device=true, prefetch=0, buffer_size=16
+on_train_batch   |     2500 | 148.48
+on_test_batch    |     2500 | 71.93
+on_test          |       25 | 72.22
+on_epoch         |       25 | 258.89
+on_train         |        1 | 258.94
+
+- prefetch_to_device=true, prefetch=0, buffer_size=2
