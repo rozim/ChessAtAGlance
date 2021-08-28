@@ -133,8 +133,6 @@ def main(_argv):
   #tf.keras.metrics.Precision(top_k=3, name='p_3'),
   #tf.keras.metrics.Recall(top_k=3, name='r_3')])
 
-
-
   best_path = os.path.join(out_dir, 'best.model')
   callbacks.append(BestNModelCheckpoint(
     filepath=best_path,

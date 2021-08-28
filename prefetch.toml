@@ -6,8 +6,8 @@ test     = ['stockfish-v5-d3-7.recordio']
 
 shuffle = 1024
 batch = 1024
-prefetch = 2
-prefetch_to_device = true
+prefetch = 0
+prefetch_to_device = false
 prefetch_to_device_buffer = 2
 swap_batch_map_order = false
 
