@@ -65,7 +65,7 @@ void process_stockfish_csv(const string& fn) {
 
   std::vector<leveldb::DB*> dbs;
   for (int i = 0; i < 10; i++) {
-    string file_name = absl::StrFormat("stockfish-d3-%d.leveldb", i);
+    string file_name = absl::StrFormat("stockfish-v5-d1-%d.leveldb", i);
     leveldb::DB* db;
     leveldb::Status status = leveldb::DB::Open(options, file_name, &db);
     dbs.push_back(db);
@@ -79,6 +79,11 @@ void process_stockfish_csv(const string& fn) {
     *comma = '\0';;
     char * fen = &line[0];
     char * lan = comma + 1;
+
+    // New format, has move score.
+    char * comma2 = strchr(lan, ',');
+    assert(comma2 != NULL);
+    *comma2 = '\0';
 
     const ChessState state(game, fen);
     if (state.CurrentPlayer() < 0) {
@@ -113,9 +118,10 @@ void process_stockfish_csv(const string& fn) {
     // 'skey' in leveldb having patterns based on board.HashValue().
     key = absl::Hash<absl::uint128>{}(key);
     string skey = absl::StrFormat("%016llx" "%016llx",  Uint128High64(key), Uint128Low64(key));
-    dbs[random() % 10]->Put(leveldb::WriteOptions(),
-			    skey,
-			    ex_out);
+    int shard = FLAGS_shard_random ?
+      random() % 10 :
+      state.Board().HashValue() % 10; // Group same FEN into same shard.
+    dbs[shard]->Put(leveldb::WriteOptions(), skey, ex_out);
   }
   fclose(f);
 

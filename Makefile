@@ -6,7 +6,7 @@ LD = g++
 # CXXFLAGS += -std=c++11
 #CXXFLAGS += -std=c++1z
 CXXFLAGS += -std=c++17
-CXXFLAGS += -I/usr/local/include 
+CXXFLAGS += -I/usr/local/include
 CXXFLAGS +=  -g -Wshadow  -O3 # -Wall
 CXXFLAGS += -Wdefaulted-function-deleted
 
@@ -36,7 +36,9 @@ t : t.o
 
 gen : gen.o
 	${LD} gen.o ${LDFLAGS} -o ${@}
-	@echo OK
+	@echo " "
+	@echo " "
+	@echo OK COMPILED FINE DESPITE WARNINGS
 
 leveldb_read : leveldb_read.o
 	${LD} leveldb_read.o ${LDFLAGS} -o ${@}

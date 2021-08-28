@@ -370,3 +370,10 @@ All done, games=2813613
 Close 9 | 19836 (s)
 Approx bytes: 224740380192
 All done after 19836
+
+2021-08-27
+==========
+python gen_stockfish.py -d 1 -n 1048576 > stockfish-v5-d1.csv &
+python gen_stockfish.py -d 3 -n 1048576 > stockfish-v5-d3.csv &
+
+rm -rf stockfish-v5-d1-?.leveldb ; LD_LIBRARY_PATH=/Users/dave/Projects/open_spiel/build:/Users/dave/miniforge3/lib/python3.9/site-packages/tensorflow  ./gen  --shard_random=False --stockfish_csv=stockfish_d1_v5_1M.csv
