@@ -72,10 +72,14 @@ class LogLrCallback(Callback):
 
 def main(_argv):
   flags.mark_flags_as_required(['plan'])
-  t1 = time.time()
   tf.compat.v1.logging.set_verbosity(tf.compat.v1.logging.ERROR)
   os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
   warnings.filterwarnings('ignore', category=Warning)
+
+  t1 = time.time()
+
+  timing = TimingCallback()
+  timing.begin('overall_begin')
 
   out_dir = datetime.today().strftime('%Y-%m-%d_%H:%M:%S')
   out_dir = os.path.join('results', out_dir)
@@ -142,7 +146,7 @@ def main(_argv):
     save_weights_only=False,
     verbose=0))
 
-  timing = TimingCallback()
+
   callbacks.append(timing)
 
   timing.record('on_fit_begin')
@@ -209,6 +213,7 @@ def main(_argv):
     f.write(f'time          : {int(time.time() - t1)}\n')
   os.chmod(fn, 0o444)
 
+  timing.begin('overall_end')
   print('Timing')
   for k in timing.tot:
     print(f'{k:16s} | {timing.num[k]:8d} | {timing.tot[k]:.2f}')
