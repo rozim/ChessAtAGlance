@@ -557,3 +557,4 @@ on_train_batch   |     1000 | 68.12
 on_train_batch   |     1000 | 65.82
 
 - device=false prefetch=0
+on_train_batch   |     1000 | 59.89

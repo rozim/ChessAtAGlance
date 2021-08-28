@@ -3,7 +3,6 @@
 train    = ['stockfish-v5-d3-9.recordio']
 validate = ['stockfish-v5-d3-8.recordio']
 test     = ['stockfish-v5-d3-7.recordio']
-
 shuffle = 1024
 batch = 1024
 prefetch = 0
