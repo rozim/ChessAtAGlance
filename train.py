@@ -49,6 +49,7 @@ from model import create_model
 from lr import create_lr_schedule
 
 from tf_utils_callbacks.callbacks import BestNModelCheckpoint
+from timing_callback import TimingCallback
 
 
 FLAGS = flags.FLAGS
@@ -79,14 +80,14 @@ def main(_argv):
   out_dir = datetime.today().strftime('%Y-%m-%d_%H:%M:%S')
   out_dir = os.path.join('results', out_dir)
   print('mkdir', out_dir)
-  os.mkdir(out_dir)  
-  
+  os.mkdir(out_dir)
+
   plan = load_plan(FLAGS.plan)
   fn = os.path.join(out_dir, os.path.basename(FLAGS.plan))
   print(f'Write {fn}')
   with open(fn, 'w') as f:
     toml.dump(plan, f)
-  os.chmod(fn, 0o444)    
+  os.chmod(fn, 0o444)
 
   dplan = plan.data
   ds1 = create_input_generator(dplan, dplan.train, is_train=True)
@@ -103,7 +104,7 @@ def main(_argv):
 
   callbacks = [TerminateOnNaN(),
                LogLrCallback()]
-  
+
   tplan = plan.train
   (lr_callback, lr) = create_lr_schedule(tplan)
   if lr_callback:
@@ -112,7 +113,7 @@ def main(_argv):
   #                          first_decay_steps=tplan.first_decay_steps,
   #                          t_mul=1,
   #                          m_mul=1,
-  #                          alpha=tplan.alpha)  
+  #                          alpha=tplan.alpha)
 
   if tplan.optimizer == 'SGD':
     optimizer = SGD(learning_rate=lr)
@@ -137,6 +138,9 @@ def main(_argv):
     save_weights_only=False,
     verbose=0))
 
+  timing = TimingCallback()
+  callbacks.append(timing)
+
   history = m.fit(x=ds1,
                   epochs=tplan.epochs,
                   steps_per_epoch=tplan.steps_per_epoch,
@@ -146,9 +150,9 @@ def main(_argv):
   df = pd.DataFrame(history.history)
 
   fn = os.path.join(out_dir, 'last.model')
-  print(f'Write {fn}')    
+  print(f'Write {fn}')
   m.save(fn)
-  os.chmod(fn, 0o755) 
+  os.chmod(fn, 0o755)
 
   if ds3:
     tt0 = time.time()
@@ -159,40 +163,40 @@ def main(_argv):
 
     print('Test (best)')
     tt0 = time.time()
-    ds3 = create_input_generator(dplan, dplan.test, is_train=False) # rewind    
+    ds3 = create_input_generator(dplan, dplan.test, is_train=False) # rewind
     test_ev2 = tf.keras.models.load_model(best_path).evaluate(x=ds3, return_dict=True, steps=tplan.test_steps)
     dt = time.time() - tt0
-    print('Test/2:', test_ev2, int(dt))    
+    print('Test/2:', test_ev2, int(dt))
 
   fn = os.path.join(out_dir, 'history.csv')
-  print(f'Write {fn}')  
-  with open(fn, 'w') as f:  
+  print(f'Write {fn}')
+  with open(fn, 'w') as f:
     df_to_csv(df, f)
-  os.chmod(fn, 0o444)        
+  os.chmod(fn, 0o444)
 
   v1 = df['val_accuracy'].max()
   v2 = df['val_accuracy'].values[-1]
 
   fn = os.path.join(out_dir, 'report.txt')
-  print(f'Write {fn}')  
-  with open(fn, 'w') as f:    
+  print(f'Write {fn}')
+  with open(fn, 'w') as f:
     print(f'val_accuracy    {v1:6.4f} (best)')
     print(f'                {v2:6.4f} (last)')
-    print(f'test_accuracy   {test_ev2["accuracy"]:6.4f} (best)')        
+    print(f'test_accuracy   {test_ev2["accuracy"]:6.4f} (best)')
     print(f'                {test_ev["accuracy"]:6.4f} (last)')
-    
+
     f.write(f'val_accuracy  : {v1:6.4f} (best)\n')
     f.write(f'val_accuracy  : {v2:6.4f} (last)\n')
 
     f.write(f'test_accuracy : {test_ev2["accuracy"]:6.4f} (best)\n')
-    f.write(f'test_accuracy : {test_ev["accuracy"]:6.4f} (last)\n')    
+    f.write(f'test_accuracy : {test_ev["accuracy"]:6.4f} (last)\n')
 
-    f.write(f'time          : {int(time.time() - t1)}\n')    
-  os.chmod(fn, 0o444) 
+    f.write(f'time          : {int(time.time() - t1)}\n')
+  os.chmod(fn, 0o444)
 
-
+  print('Timing')
+  for k in timing.tot:
+    print(f'{k:12s} {timing.num[k]:8d} {timing.tot[k]:.2f}')
 
 if __name__ == '__main__':
   app.run(main)
-
-  
