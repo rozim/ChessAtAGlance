@@ -377,3 +377,104 @@ python gen_stockfish.py -d 1 -n 1048576 > stockfish-v5-d1.csv &
 python gen_stockfish.py -d 3 -n 1048576 > stockfish-v5-d3.csv &
 
 rm -rf stockfish-v5-d1-?.leveldb ; LD_LIBRARY_PATH=/Users/dave/Projects/open_spiel/build:/Users/dave/miniforge3/lib/python3.9/site-packages/tensorflow  ./gen  --shard_random=False --stockfish_csv=stockfish_d1_v5_1M.csv
+
+
+2021-08-28
+==========
+
+- prefetch_to_device=false
+
+Epoch 25/25
+100/100 [==============================] - 9s 89ms/step - loss: 2.2342 - accuracy: 0.3502 - val_loss: 8.0321 - val_accuracy: 0.0463
+...
+Write results/2021-08-28_11:21:54/history.csv
+Write results/2021-08-28_11:21:54/report.txt
+val_accuracy    0.0503 (best)
+                0.0463 (last)
+test_accuracy   0.0459 (best)
+                0.0459 (last)
+Timing
+on_train_batch |     2500 | 153.53
+on_test_batch |     2500 | 76.01
+on_test      |       25 | 76.37
+on_epoch     |       25 | 267.15
+on_train     |        1 | 267.19
+
+- prefetch_to_device=true, prefetch=4
+
+Epoch 25/25
+100/100 [==============================] - 9s 88ms/step - loss: 2.0242 - accuracy: 0.3835 - val_loss: 7.6495 - val_accuracy: 0.0447
+Write results/2021-08-28_11:31:20/last.model
+...
+Write results/2021-08-28_11:31:20/history.csv
+Write results/2021-08-28_11:31:20/report.txt
+val_accuracy    0.0542 (best)
+                0.0447 (last)
+test_accuracy   0.0454 (best)
+                0.0454 (last)
+Timing
+on_train_batch |     2500 | 146.21
+on_test_batch |     2500 | 69.96
+on_test      |       25 | 70.23
+on_epoch     |       25 | 251.79
+on_train     |        1 | 251.84
+
+--> earlier epochs are a few ms faster however
+
+- prefetch_to_device=true, prefetch=1 (slower)
+
+on_train_batch |     2500 | 153.80
+on_test_batch |     2500 | 76.05
+on_test      |       25 | 76.37
+on_epoch     |       25 | 268.78
+on_train     |        1 | 268.84
+
+- prefetch_to_device=true, prefetch=4 (repeat from above)
+
+Timing
+on_train_batch |     2500 | 148.26
+on_test_batch |     2500 | 71.08
+on_test      |       25 | 71.37
+on_epoch     |       25 | 256.56
+on_train     |        1 | 256.61
+
+--> somewhat similar
+
+- prefetch_to_device=true, prefetch=2
+
+Timing
+on_train_batch |     2500 | 147.84
+on_test_batch |     2500 | 70.35
+on_test      |       25 | 70.62
+on_epoch     |       25 | 254.86
+on_train     |        1 | 254.91
+
+
+- prefetch_to_device=false, prefetch=0
+on_train_batch |     2500 | 150.44
+on_test_batch |     2500 | 74.08
+on_test      |       25 | 74.39
+on_epoch     |       25 | 260.04
+on_train     |        1 | 260.11
+
+- prefetch_to_device=false, prefetch=1
+Timing
+on_train_batch |     2500 | 148.25
+on_test_batch |     2500 | 71.02
+on_test      |       25 | 71.32
+on_epoch     |       25 | 254.87
+on_train     |        1 | 254.93
+
+- prefetch_to_device=true, prefetch=1
+on_train_batch   |     2500 | 148.96
+on_test_batch    |     2500 | 70.94
+on_test          |       25 | 71.20
+on_epoch         |       25 | 256.52
+on_train         |        1 | 256.58
+
+- prefetch_to_device=true, prefetch=0, buffer_size=16
+on_train_batch   |     2500 | 144.93
+on_test_batch    |     2500 | 70.09
+on_test          |       25 | 70.36
+on_epoch         |       25 | 250.98
+on_train         |        1 | 251.05
