@@ -529,3 +529,6 @@ on_train_batch   |     1000 | 59.41
 
 - device=true, prefetch=0, buffer=2, swap=true <-- no change
 on_train_batch   |     1000 | 59.03
+
+- device=true, prefetch=2, buffer=2, swap=false <- faster slightly
+on_train_batch   |     1000 | 58.64
