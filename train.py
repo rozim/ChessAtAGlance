@@ -147,12 +147,14 @@ def main(_argv):
   timing = TimingCallback()
   callbacks.append(timing)
 
+  timing.record('on_fit_begin')
   history = m.fit(x=ds1,
                   epochs=tplan.epochs,
                   steps_per_epoch=tplan.steps_per_epoch,
                   validation_data=ds2,
                   validation_steps=tplan.validation_steps,
                   callbacks=callbacks)
+  timing.record('on_fit_end')
   df = pd.DataFrame(history.history)
 
   fn = os.path.join(out_dir, 'last.model')
@@ -160,6 +162,7 @@ def main(_argv):
   m.save(fn)
   os.chmod(fn, 0o755)
 
+  timing.record('after_fit_begin')
   test_ev, test_ev2 = None, None
   if tplan.test_steps > 0 and ds3:
     tt0 = time.time()
@@ -178,6 +181,7 @@ def main(_argv):
     test_ev2 = tf.keras.models.load_model(best_path).evaluate(x=ds3, return_dict=True, steps=tplan.test_steps)
     dt = time.time() - tt0
     print('Test/2:', test_ev2, int(dt))
+  timing.record('after_fit_end')
 
   fn = os.path.join(out_dir, 'history.csv')
   print(f'Write {fn}')
