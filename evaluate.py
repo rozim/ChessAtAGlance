@@ -47,7 +47,7 @@ def main(_argv):
 
   dres = collections.defaultdict(list)
   while steps <= goal:
-    ds3 = create_input_generator(dplan, FLAGS.fn if FLAGS.fn else dplan.test, is_train=False, verbose=False)    
+    ds3 = create_input_generator(dplan, FLAGS.fn if FLAGS.fn else dplan.test, is_train=False, verbose=False)
     t1 = time.time()
     test_ev = model.evaluate(x=ds3, return_dict=True, steps=steps, verbose=0)
     dt = time.time() - t1
@@ -56,12 +56,12 @@ def main(_argv):
 
     dres['dt'].append(dt)
     dres['loss'].append(test_ev['loss'])
-    dres['accuracy'].append(test_ev['accuracy'])    
-    
+    dres['accuracy'].append(test_ev['accuracy'])
+
   df = pd.DataFrame.from_dict(dres)
   df.to_csv('evaluate.csv', index=False)
   print(f'done: {int(time.time() - t0)}')
-  
+
 
 if __name__ == '__main__':
   app.run(main)

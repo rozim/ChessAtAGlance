@@ -32,7 +32,7 @@ import snappy
 # print(tf.convert_to_tensor(foo))
 
 def gen():
-  db = leveldb.LevelDB('mega-v2-1.leveldb') 
+  db = leveldb.LevelDB('mega-v2-1.leveldb')
   for ent in db.RangeIter():
     ex = tf.train.Example().FromString(ent[1])
     #print(ex)
@@ -55,6 +55,3 @@ print(foo)
 # print(foo[0])
 # print(foo[1])
 # print(foo[1].numpy())
-
-
-

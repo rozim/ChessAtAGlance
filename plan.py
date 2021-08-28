@@ -14,8 +14,8 @@ def load_plan(fn):
 
 def main(argv):
   print(load_plan('v0.toml'))
-  print(load_plan('v0.toml').data)  
-  
+  print(load_plan('v0.toml').data)
+
 
 if __name__ == '__main__':
   app.run(main)

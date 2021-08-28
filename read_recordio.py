@@ -21,7 +21,7 @@ def _parse_function(example_proto):
 
 
 def main(argv):
-  # print('# v1')  
+  # print('# v1')
   # ds = tf.data.TFRecordDataset(['mega-v3-0.recordio'])
   # for ent in ds.take(1):
   #   print(ent)
@@ -81,7 +81,7 @@ def main(argv):
       #print('ent', ent.shape)
       print(ent)
       #print('yes: ', tf.io.parse_example(ent, features=FEATURES))
-      break        
+      break
 
   if False: # ?
     print('# v5')
@@ -96,4 +96,4 @@ def main(argv):
 
 
 if __name__ == '__main__':
-  app.run(main)          
+  app.run(main)

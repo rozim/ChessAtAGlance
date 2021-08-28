@@ -60,7 +60,7 @@ while board.outcome() is None:
   uci = str(move)
   san = board.san(move)
   #print(uci, san, move, rnd)
-  moves.append(san)  
+  moves.append(san)
   board.push(move)
 print('dt: ', time.time() - t1)
 print('moves: ', moves)

@@ -33,8 +33,8 @@ def gen_snappy(fn):
     action = tf.convert_to_tensor(ex.features.feature['label'].int64_list.value[0],
                                  dtype=tf.int64)
     yield (board, action)
-    
-  
+
+
 def create_input_generator_rio(dplan, fns, is_train=True, verbose=True, do_repeat=True):
   if type(fns) == type(""):
     fns = [fns]
@@ -63,7 +63,7 @@ def create_input_generator(dplan, fns, is_train=True, verbose=True, do_repeat=Tr
     fns = [fns]
   if fns[0].endswith('.recordio'):
     return create_input_generator_rio(dplan, fns, is_train, verbose, do_repeat)
-  
+
   if verbose:
     print(f'Open {fns}')
 
@@ -80,13 +80,13 @@ def create_input_generator(dplan, fns, is_train=True, verbose=True, do_repeat=Tr
       ds = ds.repeat()
     datasets.append(ds)
     del ds
-    
+
   ds = tf.data.experimental.sample_from_datasets(
     datasets,
     weights=None # Uniform
     )
   if is_train:
-    ds = ds.shuffle(dplan.shuffle)  
+    ds = ds.shuffle(dplan.shuffle)
   ds = ds.repeat()
   ds = ds.batch(dplan.batch,
                 num_parallel_calls=AUTOTUNE,
@@ -94,11 +94,11 @@ def create_input_generator(dplan, fns, is_train=True, verbose=True, do_repeat=Tr
   ds = ds.prefetch(dplan.prefetch)
   return ds
 
-    
+
 def main(argv):
   plan = load_plan('v0.toml')
   print(next(iter(create_input_generator(plan.data, 'mega-v2-9.snappy'))))
 
-    
+
 if __name__ == '__main__':
-  app.run(main)    
+  app.run(main)

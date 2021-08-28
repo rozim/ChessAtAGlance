@@ -10,8 +10,8 @@ from absl import app
 def unsnappy(fn):
   with open(fn, 'rb', 8 * 1024 * 1024) as f:
     unpack = struct.unpack
-    uncompress  = snappy.uncompress    
-    read = f.read    
+    uncompress  = snappy.uncompress
+    read = f.read
     while True:
       blob = read(4)
       if len(blob) == 0:
@@ -31,4 +31,4 @@ def main(argv):
   print('done', n)
 
 if __name__ == '__main__':
-  app.run(main)          
+  app.run(main)

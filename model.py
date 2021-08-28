@@ -78,11 +78,11 @@ def create_model(mplan):
 
       x = my_conv2d(name=f'cnn_{i}b')(x)
       x = my_bn(name=f'bn_{i}b')(x)
-      x = Add(name='skip_{}b'.format(i))([x, skip])      
+      x = Add(name='skip_{}b'.format(i))([x, skip])
       x = my_activation(name=f'act_{i}b')(x)
       if mplan.dropout > 0.0:
         x = my_dropout(name=f'drop_{i}b')(x)
-        
+
   if mplan.do_flatten1x1:
     x = Conv2D(
       filters=mplan.num_filters,
@@ -95,7 +95,7 @@ def create_model(mplan):
     x = my_bn(name=f'bn_flatten')(x)
     x = my_activation(name=f'act_flatten')(x)
     if mplan.dropout > 0.0:
-      x = my_dropout(name=f'drop_flatten')(x)    
+      x = my_dropout(name=f'drop_flatten')(x)
 
   x = Flatten()(x)
 
@@ -103,11 +103,11 @@ def create_model(mplan):
     x = my_dense(w, name=f'top_{i}')(x)
     x = my_bn(name=f'top_bn_{i}')(x)
     x = my_activation(name=f'top_act_{i}')(x)
-    if mplan.dropout > 0.0:    
+    if mplan.dropout > 0.0:
       x = my_dropout(name=f'top_drop_{i}')(x)
-    
+
   x = my_dense(NUM_CLASSES, name='logits', activation=None)(x)
-  
+
   return Model(inputs=[board], outputs=x)
 
 
@@ -117,6 +117,6 @@ def main(_argv):
   plan = load_plan('v0.toml')
   m = create_model(plan.model)
   m.summary()
-  
+
 if __name__ == '__main__':
-  app.run(main)  
+  app.run(main)

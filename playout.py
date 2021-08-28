@@ -22,14 +22,14 @@ flags.DEFINE_string('fen', None, '')
 
 def f2(f):
   return f'{f:.2f}'
-      
+
 def main(argv):
   flags.mark_flags_as_required(['model'])
   tf.compat.v1.logging.set_verbosity(tf.compat.v1.logging.ERROR)
   os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
-  
+
   model = tf.keras.models.load_model(FLAGS.model)
-  
+
   game = pyspiel.load_game('chess')
   #game.deserialize_state('rnbqk2r/5pb1/p1pppnp1/1p5p/3P4/PPPBPNPP/5P2/RNBQK2R w KQkq - 1 10')
 
@@ -52,13 +52,13 @@ def main(argv):
   sans = []
   while not state.is_terminal():
     print()
-    print('---------')    
+    print('---------')
     print('FEN: ', state)
     print('REW: ', state.returns())
     board = make_observation(game).tensor.reshape(1, 20, 8, 8)
 
     logits = model.predict([board])[0]
-    
+
     logits2 = []
     i2a = []
 
@@ -69,7 +69,7 @@ def main(argv):
     softmax2 = tf.nn.softmax(np.array(logits2, dtype='float32')).numpy()
     softmax2 /= softmax2.sum() # try to get closer to 1.0
 
-    hack = []    
+    hack = []
     for i, score in enumerate(softmax2):
       hack.append((score,
                   state.action_to_string(i2a[i])))
@@ -91,7 +91,7 @@ def main(argv):
   print('x0', state.is_terminal())
   print('x1', state.rewards())
   print('x2', state.returns())
-  print('x3', game.utility_sum())  
+  print('x3', game.utility_sum())
 
   col = 0
   buf = []
@@ -112,4 +112,4 @@ def main(argv):
 # rnbqk2r/5pb1/p1pppnp1/1p5p/3P4/PPPBPNPP/5P2/RNBQK2R w KQkq - 1 10
 
 if __name__ == '__main__':
-  app.run(main)      
+  app.run(main)

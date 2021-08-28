@@ -8,6 +8,7 @@ from data import create_input_generator, gen_snappy
 
 BOARD_SHAPE = (20, 8, 8)
 BOARD_FLOATS = 1280
+AUTOTUNE = tf.data.AUTOTUNE
 
 FEATURES = {
   'board': tf.io.FixedLenFeature(BOARD_SHAPE, tf.float32),
@@ -29,7 +30,7 @@ def _extract(blob):
   t = tf.io.parse_example(blob, features=FEATURES)
   return t['board'], t['label']
 
-  
+
 def main(argv):
   t1 = time.time()
 
@@ -40,16 +41,16 @@ def main(argv):
                                         output_types=('float32', 'int64'),
                                         output_shapes=(BOARD_SHAPE, []))
     ds = ds.shuffle(1024)
-    ds = ds.batch(FLAGS.bs) 
+    ds = ds.batch(FLAGS.bs)
   else:
     assert FLAGS.what == 1
     print('DS: new')
     ds = tf.data.TFRecordDataset([FN1], 'ZLIB') # buffer_size doesn't help
     ds = ds.shuffle(1024)
     ds = ds.batch(FLAGS.bs)
-    ds = ds.map(_extract)
+    ds = ds.map(_extract) # no benefit: num_parallel_calls=4, deterministic=False)
 
-  ds = ds.prefetch(2)
+  ds = ds.prefetch(2) # value doesn't seem to matter, even 0
   first = True
   for batch in iter(ds.take(FLAGS.n)):
    if first:
@@ -60,10 +61,10 @@ def main(argv):
   print(int(dt))
   print('ex/sec: ', (FLAGS.n * FLAGS.bs) / dt)
 
-    
+
 
 
 
 
 if __name__ == '__main__':
-  app.run(main)          
+  app.run(main)
