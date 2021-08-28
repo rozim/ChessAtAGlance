@@ -515,3 +515,10 @@ on_test_batch    |     2500 | 85.79
 on_test          |       25 | 86.20
 on_epoch         |       25 | 293.91
 on_train         |        1 | 293.96
+
+- prefetch_to_device=true, prefetch=0, buffer_size=32 bad
+on_train_batch   |     2500 | 160.99
+on_test_batch    |     2500 | 84.21
+on_test          |       25 | 84.58
+on_epoch         |       25 | 287.98
+on_train         |        1 | 288.03
