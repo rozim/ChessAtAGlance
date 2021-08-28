@@ -79,7 +79,7 @@ def main(_argv):
   t1 = time.time()
 
   timing = TimingCallback()
-  timing.begin('overall_begin')
+  timing.record('overall_begin')
 
   out_dir = datetime.today().strftime('%Y-%m-%d_%H:%M:%S')
   out_dir = os.path.join('results', out_dir)
@@ -213,7 +213,7 @@ def main(_argv):
     f.write(f'time          : {int(time.time() - t1)}\n')
   os.chmod(fn, 0o444)
 
-  timing.begin('overall_end')
+  timing.record('overall_end')
   print('Timing')
   for k in timing.tot:
     print(f'{k:16s} | {timing.num[k]:8d} | {timing.tot[k]:.2f}')
