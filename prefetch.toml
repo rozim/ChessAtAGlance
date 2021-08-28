@@ -9,7 +9,7 @@ batch = 1024
 prefetch = 0
 prefetch_to_device = true
 prefetch_to_device_buffer = 2
-swap_batch_map_order = false
+swap_batch_map_order = true
 
 [model]
 l2 = 0.0

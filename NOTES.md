@@ -526,3 +526,6 @@ on_train         |        1 | 288.03
 - ugh, change methodology
 - device=true, prefetch=0, buffer=2
 on_train_batch   |     1000 | 59.41
+
+- device=true, prefetch=0, buffer=2, swap=true <-- no change
+on_train_batch   |     1000 | 59.03
