@@ -522,3 +522,7 @@ on_test_batch    |     2500 | 84.21
 on_test          |       25 | 84.58
 on_epoch         |       25 | 287.98
 on_train         |        1 | 288.03
+
+- ugh, change methodology
+- device=true, prefetch=0, buffer=2
+on_train_batch   |     1000 | 59.41

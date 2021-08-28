@@ -100,7 +100,6 @@ def main(_argv):
     ds2 = ds2.apply(tf.data.experimental.prefetch_to_device('/gpu:0', bs))
     ds3 = ds3.apply(tf.data.experimental.prefetch_to_device('/gpu:0', bs))
 
-
   m = create_model(plan.model)
   fn = os.path.join(out_dir, 'model-summary.txt')
   print(f'Write {fn}')
@@ -161,7 +160,8 @@ def main(_argv):
   m.save(fn)
   os.chmod(fn, 0o755)
 
-  if ds3:
+  test_ev, test_ev2 = None, None
+  if tplan.test_steps > 0 and ds3:
     tt0 = time.time()
     print('Test (last)')
     test_ev = m.evaluate(x=ds3, return_dict=True, steps=tplan.test_steps)
@@ -193,14 +193,16 @@ def main(_argv):
   with open(fn, 'w') as f:
     print(f'val_accuracy    {v1:6.4f} (best)')
     print(f'                {v2:6.4f} (last)')
-    print(f'test_accuracy   {test_ev2["accuracy"]:6.4f} (best)')
-    print(f'                {test_ev["accuracy"]:6.4f} (last)')
+    if test_ev:
+      print(f'test_accuracy   {test_ev2["accuracy"]:6.4f} (best)')
+      print(f'                {test_ev["accuracy"]:6.4f} (last)')
 
     f.write(f'val_accuracy  : {v1:6.4f} (best)\n')
     f.write(f'val_accuracy  : {v2:6.4f} (last)\n')
 
-    f.write(f'test_accuracy : {test_ev2["accuracy"]:6.4f} (best)\n')
-    f.write(f'test_accuracy : {test_ev["accuracy"]:6.4f} (last)\n')
+    if test_ev:
+      f.write(f'test_accuracy : {test_ev2["accuracy"]:6.4f} (best)\n')
+      f.write(f'test_accuracy : {test_ev["accuracy"]:6.4f} (last)\n')
 
     f.write(f'time          : {int(time.time() - t1)}\n')
   os.chmod(fn, 0o444)

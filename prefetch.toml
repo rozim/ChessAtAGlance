@@ -8,7 +8,7 @@ shuffle = 1024
 batch = 1024
 prefetch = 0
 prefetch_to_device = true
-prefetch_to_device_buffer = 32
+prefetch_to_device_buffer = 2
 
 [model]
 l2 = 0.0
@@ -25,11 +25,11 @@ do_flatten1x1 = true
 
 [train]
 optimizer = 'Adam'
-epochs = 25
+epochs = 10
 
 steps_per_epoch = 100
-validation_steps = 100
-test_steps = 100
+validation_steps = 1
+test_steps = 1
 
 lr_schedule = 'cosine'
 lr = 0.01
