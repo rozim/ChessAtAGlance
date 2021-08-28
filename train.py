@@ -95,9 +95,10 @@ def main(_argv):
   ds3 = create_input_generator(dplan, dplan.test, is_train=False, do_repeat=False) if 'test' in dplan else None
 
   if dplan.get('prefetch_to_device', False):
-    ds1 = ds1.apply(tf.data.experimental.prefetch_to_device('/gpu:0'))
-    ds2 = ds2.apply(tf.data.experimental.prefetch_to_device('/gpu:0'))
-    ds3 = ds3.apply(tf.data.experimental.prefetch_to_device('/gpu:0'))
+    bs = dplan.get('prefetch_to_device_buffer', None)
+    ds1 = ds1.apply(tf.data.experimental.prefetch_to_device('/gpu:0', bs))
+    ds2 = ds2.apply(tf.data.experimental.prefetch_to_device('/gpu:0', bs))
+    ds3 = ds3.apply(tf.data.experimental.prefetch_to_device('/gpu:0', bs))
 
 
   m = create_model(plan.model)

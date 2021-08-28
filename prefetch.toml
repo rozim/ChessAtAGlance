@@ -8,6 +8,7 @@ shuffle = 1024
 batch = 1024
 prefetch = 0
 prefetch_to_device = true
+prefetch_to_device_buffer = 32
 
 [model]
 l2 = 0.0
