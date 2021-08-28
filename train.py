@@ -94,6 +94,12 @@ def main(_argv):
   ds2 = create_input_generator(dplan, dplan.validate, is_train=False)
   ds3 = create_input_generator(dplan, dplan.test, is_train=False, do_repeat=False) if 'test' in dplan else None
 
+  if dplan.get('prefetch_to_device', False):
+    ds1 = ds1.apply(tf.data.experimental.prefetch_to_device('/gpu:0'))
+    ds2 = ds2.apply(tf.data.experimental.prefetch_to_device('/gpu:0'))
+    ds3 = ds3.apply(tf.data.experimental.prefetch_to_device('/gpu:0'))
+
+
   m = create_model(plan.model)
   fn = os.path.join(out_dir, 'model-summary.txt')
   print(f'Write {fn}')
@@ -164,6 +170,9 @@ def main(_argv):
     print('Test (best)')
     tt0 = time.time()
     ds3 = create_input_generator(dplan, dplan.test, is_train=False) # rewind
+    if dplan.get('prefetch_to_device', False):
+      ds3 = ds3.apply(tf.data.experimental.prefetch_to_device('/gpu:0'))
+
     test_ev2 = tf.keras.models.load_model(best_path).evaluate(x=ds3, return_dict=True, steps=tplan.test_steps)
     dt = time.time() - tt0
     print('Test/2:', test_ev2, int(dt))
@@ -196,7 +205,7 @@ def main(_argv):
 
   print('Timing')
   for k in timing.tot:
-    print(f'{k:12s} {timing.num[k]:8d} {timing.tot[k]:.2f}')
+    print(f'{k:12s} | {timing.num[k]:8d} | {timing.tot[k]:.2f}')
 
 if __name__ == '__main__':
   app.run(main)

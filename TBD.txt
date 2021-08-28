@@ -1,5 +1,4 @@
 data:
-- gen sf alternatives
 
 lr:
 
@@ -14,6 +13,8 @@ https://github.com/RayXie29/SENet_Keras/blob/master/SENet.py
 - 1x1 flatten should be configurable -- here there are 2 filters, then no dense
   https://medium.com/applied-data-science/alphago-zero-explained-in-one-diagram-365f5abf67e0
 
+- self-attention
+
 train:
 - AdamW: https://www.tensorflow.org/addons/api_docs/python/tfa/optimizers/AdamW
 - much longer training
@@ -24,9 +25,12 @@ train:
             tf.keras.mixed_precision.experimental.set_policy('mixed_float16')
 	    https://www.tensorflow.org/api_docs/python/tf/keras/mixed_precision/Policy
 	    https://www.tensorflow.org/guide/mixed_precision
+	    maybe also LossScaleOptimizer
 
 eval:
 - weigh by #legal moves
+-- model.evaluate(sample_weight=)
+-- x=(inputs, targets, sample_weights) -- dataset in fit()
 
 review:
 - https://github.com/CSSLab/maia-chess/blob/master/blunder_prediction/maia_chess_backend/maia/tfprocess.py
