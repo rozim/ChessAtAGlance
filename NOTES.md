@@ -502,3 +502,11 @@ on_epoch         |       25 | 259.98
 on_train         |        1 | 260.03
 
 - prefetch_to_device=true, prefetch=0, buffer_size=8
+Timing
+on_train_batch   |     2500 | 152.59
+on_test_batch    |     2500 | 74.56
+on_test          |       25 | 74.88
+on_epoch         |       25 | 266.80
+on_train         |        1 | 266.85
+
+- prefetch_to_device=true, prefetch=0, buffer_size=None
