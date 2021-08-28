@@ -549,3 +549,6 @@ on_train_batch   |     1000 | 63.02
 
 - device=false, prefetch=1
 on_train_batch   |     1000 | 65.67
+
+- device=true buffer=2 prefetch=1
+on_train_batch   |     1000 | 68.12
