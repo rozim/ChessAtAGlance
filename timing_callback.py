@@ -14,54 +14,61 @@ class TimingCallback(Callback):
     self.num = collections.defaultdict(int)
 
   def on_train_batch_begin(self, batch, logs=None):
-    self._doit(sys._getframe().f_code.co_name)
+    self.record(sys._getframe().f_code.co_name)
 
   def on_train_batch_end(self, batch, logs=None):
-    self._doit(sys._getframe().f_code.co_name)
+    self.record(sys._getframe().f_code.co_name)
 
   def on_test_batch_begin(self, batch, logs=None):
-    self._doit(sys._getframe().f_code.co_name)
+    self.record(sys._getframe().f_code.co_name)
 
   def on_test_batch_end(self, batch, logs=None):
-    self._doit(sys._getframe().f_code.co_name)
+    self.record(sys._getframe().f_code.co_name)
 
   def on_predict_batch_begin(self, batch, logs=None):
-    self._doit(sys._getframe().f_code.co_name)
+    self.record(sys._getframe().f_code.co_name)
 
   def on_predict_batch_end(self, batch, logs=None):
-    self._doit(sys._getframe().f_code.co_name)
+    self.record(sys._getframe().f_code.co_name)
 
   #####
 
 
   def on_epoch_begin(self, epoch, logs=None):
-    self._doit(sys._getframe().f_code.co_name)
+    self.record(sys._getframe().f_code.co_name)
 
   def on_train_begin(self, logs=None):
-    self._doit(sys._getframe().f_code.co_name)
+    self.record(sys._getframe().f_code.co_name)
 
   def on_test_begin(self, logs=None):
-    self._doit(sys._getframe().f_code.co_name)
+    self.record(sys._getframe().f_code.co_name)
 
   def on_predict_begin(self, logs=None):
-    self._doit(sys._getframe().f_code.co_name)
+    self.record(sys._getframe().f_code.co_name)
 
   def on_epoch_end(self, epoch, logs=None):
-    self._doit(sys._getframe().f_code.co_name)
+    self.record(sys._getframe().f_code.co_name)
 
   def on_train_end(self, logs=None):
-    self._doit(sys._getframe().f_code.co_name)
+    self.record(sys._getframe().f_code.co_name)
 
   def on_test_end(self, logs=None):
-    self._doit(sys._getframe().f_code.co_name)
+    self.record(sys._getframe().f_code.co_name)
 
   def on_predict_end(self, logs=None):
-    self._doit(sys._getframe().f_code.co_name)
+    self.record(sys._getframe().f_code.co_name)
+
+  # my extensions
+  # def on_validation_begin(self, logs=None):
+  #   self.record(sys._getframe().f_code.co_name)
+
+  # def on_validation_end(self, logs=None):
+  #   self.record(sys._getframe().f_code.co_name)
 
   #
   # maybe more generic again is
   # https://stackoverflow.com/questions/2704434/intercept-method-calls-in-python
-  def _doit(self, func_name):
+  def record(self, func_name):
     if func_name.endswith('_begin'):
       what = func_name.removesuffix('_begin')
       self.t[what] = time.perf_counter()
