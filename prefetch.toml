@@ -3,9 +3,9 @@
 train    = ['stockfish-v5-d3-9.recordio']
 validate = ['stockfish-v5-d3-8.recordio']
 test     = ['stockfish-v5-d3-7.recordio']
-shuffle = 1024
+shuffle = 10240
 batch = 1024
-prefetch = 0
+prefetch = 1
 prefetch_to_device = false
 prefetch_to_device_buffer = 2
 swap_batch_map_order = false
@@ -25,11 +25,11 @@ do_flatten1x1 = true
 
 [train]
 optimizer = 'Adam'
-epochs = 10
+epochs = 25
 
-steps_per_epoch = 100
-validation_steps = 1
-test_steps = 1
+steps_per_epoch = 250
+validation_steps = 10
+test_steps = 10
 
 lr_schedule = 'cosine'
 lr = 0.01
