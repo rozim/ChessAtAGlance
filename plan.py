@@ -7,8 +7,18 @@ class objdict(dict):
     return self[name]
 
 
+def _fix_defaults(plan):
+  mplan = plan.model
+  mplan.mask_legal_moves = mplan.get('mask_legal_moves', False)
+
+  dplan = plan.data
+  dplan.prefetch_to_device = dplan.get('prefetch_to_device', False)
+
+  return plan
+
+
 def load_plan(fn):
-  return toml.load(fn, objdict)
+  return _fix_defaults(toml.load(fn, objdict))
 
 
 
