@@ -563,3 +563,20 @@ on_train_batch   |     1000 | 59.89
 on_train_batch   |     6250 | 366.84
 
 - longer, prefetch=1
+on_train_batch   |     6250 | 365.77
+
+- longer, prefetch=8
+on_train_batch   |     6250 | 365.77
+
+- longer, prefetch=8? unclear what changed
+on_train_batch   |     6250 | 379.46
+
+
+2021-08-29
+==========
+
+var len legal move list (SparseTensor) to multi one hot
+
+dense = tf.sparse.to_dense(v, default_value=-1)
+hot = tf.one_hot(dense, on_value=1.0, off_value=0.0, depth=NUM_CLASSES)
+hot2 = tf.math.reduce_sum(hot, axis=[-2])
