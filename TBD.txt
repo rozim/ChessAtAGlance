@@ -40,3 +40,4 @@ gen:
 - Use TFRecordWriter in c++
 -- https://stackoverflow.com/questions/65288044/generating-tfrecord-format-data-from-c
 -- https://github.com/initzhang/TFRecord-Parser
+-- ugh, how hard is to write our own - CRC issue?

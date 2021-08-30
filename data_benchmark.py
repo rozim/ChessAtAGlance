@@ -4,7 +4,8 @@ import functools
 import sys, os, time
 from absl import app
 from absl import flags
-from data import create_input_generator, gen_snappy
+from data import create_input_generator
+from plan import load_plan
 
 BOARD_SHAPE = (20, 8, 8)
 BOARD_FLOATS = 1280
@@ -15,15 +16,15 @@ FEATURES = {
   'label': tf.io.FixedLenFeature([], tf.int64)
 }
 
-FN0 = 'mega-v3-0.snappy'
 FN1 = 'mega-v3-0.recordio'
-
 
 FLAGS = flags.FLAGS
 
+flags.DEFINE_string('plan', None, 'toml file')
 flags.DEFINE_integer('n', 10, '')
 flags.DEFINE_integer('bs', 1024, '')
 flags.DEFINE_integer('what', None, '')
+flags.DEFINE_bool('return_legal_moves', False, '')
 
 #@tf.function
 def _extract(blob):
@@ -32,16 +33,39 @@ def _extract(blob):
 
 
 def main(argv):
+  t0 = time.time()
+  flags.mark_flags_as_required(['plan'])
+  tf.compat.v1.logging.set_verbosity(tf.compat.v1.logging.ERROR)
+  os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
+
+  plan = load_plan(FLAGS.plan)
+
+  dplan = plan.data
+  dplan.batch = FLAGS.bs if FLAGS.bs else dplan.batch
+
+  print(f'Read {dplan.train}')
+  ds = create_input_generator(dplan,
+                              dplan.train,
+                              is_train=False,
+                              verbose=False,
+                              do_repeat=False,
+                              return_legal_moves=FLAGS.return_legal_moves)
+  good = 0
+  goal = FLAGS.n
+  for ent in ds:
+    good += 1
+    if good >= goal:
+      break
+  print('good: ', good)
+  dt = time.time() - t0
+  print(f'{dt:.2f}')
+
+
+def old_main(argv):
   t1 = time.time()
 
   if FLAGS.what == 0:
-    print('DS: old')
-    gen1 = functools.partial(gen_snappy, FN0)
-    ds = tf.data.Dataset.from_generator(gen1,
-                                        output_types=('float32', 'int64'),
-                                        output_shapes=(BOARD_SHAPE, []))
-    ds = ds.shuffle(1024)
-    ds = ds.batch(FLAGS.bs)
+    assert False
   else:
     assert FLAGS.what == 1
     print('DS: new')
