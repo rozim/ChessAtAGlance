@@ -580,3 +580,12 @@ var len legal move list (SparseTensor) to multi one hot
 dense = tf.sparse.to_dense(v, default_value=-1)
 hot = tf.one_hot(dense, on_value=1.0, off_value=0.0, depth=NUM_CLASSES)
 hot2 = tf.math.reduce_sum(hot, axis=[-2])
+
+Santi paper
+https://arxiv.org/pdf/2006.14171.pdf
+
+2021-08-30
+==========
+
+Prelim mask - 430 ms/step to 555ms/step - so masking in model is slow, but doesn't seem insanely slow
+vs doing it in data seemed to slow things down more

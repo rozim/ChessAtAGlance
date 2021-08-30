@@ -73,6 +73,7 @@ class LogLrCallback(Callback):
 def main(_argv):
   flags.mark_flags_as_required(['plan'])
   tf.compat.v1.logging.set_verbosity(tf.compat.v1.logging.ERROR)
+  logging.set_verbosity('error')
   os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
   warnings.filterwarnings('ignore', category=Warning)
 
@@ -93,18 +94,24 @@ def main(_argv):
     toml.dump(plan, f)
   os.chmod(fn, 0o444)
 
-  dplan = plan.data
-  ds1 = create_input_generator(dplan, dplan.train, is_train=True)
-  ds2 = create_input_generator(dplan, dplan.validate, is_train=False)
-  ds3 = create_input_generator(dplan, dplan.test, is_train=False, do_repeat=False) if 'test' in dplan else None
+  mplan = plan.model
+  return_legal_moves = mplan.mask_legal_moves
 
-  if dplan.get('prefetch_to_device', False):
+  dplan = plan.data
+  ds1 = create_input_generator(dplan, dplan.train, is_train=True, return_legal_moves=return_legal_moves)
+
+  ds2 = create_input_generator(dplan, dplan.validate, is_train=False, return_legal_moves=return_legal_moves)
+
+  ds3 = create_input_generator(dplan, dplan.test, is_train=False, do_repeat=False,
+                               return_legal_moves=return_legal_moves) if 'test' in dplan else None
+
+  if dplan.prefetch_to_device:
     bs = dplan.get('prefetch_to_device_buffer', None)
     ds1 = ds1.apply(tf.data.experimental.prefetch_to_device('/gpu:0', bs))
     ds2 = ds2.apply(tf.data.experimental.prefetch_to_device('/gpu:0', bs))
     ds3 = ds3.apply(tf.data.experimental.prefetch_to_device('/gpu:0', bs))
 
-  m = create_model(plan.model)
+  m = create_model(mplan)
   fn = os.path.join(out_dir, 'model-summary.txt')
   print(f'Write {fn}')
   with open(fn, 'w') as f:
@@ -175,9 +182,8 @@ def main(_argv):
 
     print('Test (best)')
     tt0 = time.time()
-    ds3 = create_input_generator(dplan, dplan.test, is_train=False) # rewind
-    if dplan.get('prefetch_to_device', False):
-      print('prefetch!')
+    ds3 = create_input_generator(dplan, dplan.test, is_train=False, return_legal_moves=return_legal_moves) # rewind
+    if dplan.prefetch_to_device:
       ds3 = ds3.apply(tf.data.experimental.prefetch_to_device('/gpu:0', 32))
 
     test_ev2 = tf.keras.models.load_model(best_path).evaluate(x=ds3, return_dict=True, steps=tplan.test_steps)

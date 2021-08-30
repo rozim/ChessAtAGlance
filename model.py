@@ -7,7 +7,7 @@ from tensorflow import keras
 from tensorflow.keras import layers
 from tensorflow.keras import regularizers
 from tensorflow.keras.callbacks import TerminateOnNaN, EarlyStopping, ModelCheckpoint, LambdaCallback, Callback
-from tensorflow.keras.layers import BatchNormalization, LayerNormalization, Flatten, Add, Conv2D, Permute
+from tensorflow.keras.layers import BatchNormalization, LayerNormalization, Flatten, Add, Conv2D, Permute, Multiply
 from tensorflow.keras.layers import Dense, Dropout, Input, Embedding, Concatenate, Activation
 from tensorflow.keras.layers import GaussianNoise, LeakyReLU, Softmax
 from tensorflow.keras.layers.experimental.preprocessing import IntegerLookup, Discretization
@@ -20,11 +20,13 @@ from tensorflow.keras.optimizers.schedules import CosineDecayRestarts
 from tensorflow.python.keras import backend
 
 from plan import load_plan
-from data import *
+from data import legal_moves_mask, NUM_CLASSES, BOARD_SHAPE
+
 
 def create_model(mplan):
   kernel_regularizer = regularizers.l2(mplan.l2)
   data_format = 'channels_last'
+  mask_legal_moves = mplan.mask_legal_moves
 
   my_conv2d = functools.partial(
     Conv2D,
@@ -43,7 +45,14 @@ def create_model(mplan):
   my_activation = functools.partial(Activation, mplan.activation)
   my_dropout = functools.partial(Dropout, mplan.dropout)
 
-  board = Input(shape=BOARD_SHAPE, dtype='float32')
+  if mask_legal_moves:
+    legal_moves = Input(shape=[], name='legal_moves', dtype='int32', sparse=True)
+    #lambda x: legal_moves_mask(x),
+    mask = tf.keras.layers.Lambda(legal_moves_mask,
+                                  name='legal_moves_to_one_hot',
+                                  output_shape=[NUM_CLASSES])(legal_moves)
+
+  board = Input(shape=BOARD_SHAPE, name='board', dtype='float32')
   x = board
   # in: bs, chan, x, y
   #         20    8, 8
@@ -108,7 +117,11 @@ def create_model(mplan):
 
   x = my_dense(NUM_CLASSES, name='logits', activation=None)(x)
 
-  return Model(inputs=[board], outputs=x)
+  if mask_legal_moves:
+    x = Multiply(name='mul_mask')([x, mask])
+    return Model(inputs=[board, legal_moves], outputs=x)
+  else:
+    return Model(inputs=[board], outputs=x)
 
 
 

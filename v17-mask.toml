@@ -42,6 +42,8 @@ shuffle = 10240
 batch = 1024
 prefetch = 1
 
+
+
 [model]
 l2 = 0.0
 activation = 'relu'
@@ -54,6 +56,8 @@ num_resnet_cnn = 8
 do_flatten1x1 = true
 
 bn_momentum = 0.99
+
+mask_legal_moves = true
 
 [train]
 optimizer = 'Adam'
