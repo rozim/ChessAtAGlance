@@ -717,3 +717,25 @@ test_accuracy   0.3281 (best)
                 0.3281 (last)
 
 --> not great
+
+# python train.py --plan=v18-squeeze2.toml
+Epoch 99/100
+100/100 [==============================] - 116s 1s/step - loss: 2.1385 - accuracy: 0.3487 - val_loss: 2.1415 - val_accuracy: 0.3464
+Epoch 100/100
+100/100 [==============================] - 115s 1s/step - loss: 2.1256 - accuracy: 0.3518 - val_loss: 2.1369 - val_accuracy: 0.3464
+Write results/2021-08-31_07:41:34/last.model
+Test (last)
+1024/1024 [==============================] - 345s 337ms/step - loss: 2.1354 - accuracy: 0.3488
+Test: {'loss': 2.135408639907837, 'accuracy': 0.34882068634033203} 344
+Test (best)
+Open ['mega-v5-9.recordio']
+1024/1024 [==============================] - 347s 338ms/step - loss: 2.1354 - accuracy: 0.3488
+Test/2: {'loss': 2.135408639907837, 'accuracy': 0.34882068634033203} 349
+Write results/2021-08-31_07:41:34/history.csv
+Write results/2021-08-31_07:41:34/report.txt
+val_accuracy    0.3464 (best)
+                0.3464 (last)
+test_accuracy   0.3488 (best)
+                0.3488 (last)
+
+--> reordering model a bit changes things
