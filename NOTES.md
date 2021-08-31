@@ -589,3 +589,107 @@ https://arxiv.org/pdf/2006.14171.pdf
 
 Prelim mask - 430 ms/step to 555ms/step - so masking in model is slow, but doesn't seem insanely slow
 vs doing it in data seemed to slow things down more
+
+2021-08-30
+==========
+
+Epoch 99/100
+100/100 [==============================] - 56s 558ms/step - loss: 2.2159 - accuracy: 0.3322 - val_loss: 2.6037 - val_accuracy: 0.2486
+Epoch 100/100
+100/100 [==============================] - 55s 552ms/step - loss: 2.2091 - accuracy: 0.3342 - val_loss: 2.5551 - val_accuracy: 0.2562
+Write results/2021-08-30_10:05:52/last.model
+Test (last)
+2048/2048 [==============================] - 354s 173ms/step - loss: 2.2627 - accuracy: 0.3211
+Test: {'loss': 2.262695074081421, 'accuracy': 0.32108020782470703} 353
+Test (best)
+Open ['mega-v5-9.recordio', 'stockfish-v5-d1-9.recordio', 'stockfish-v5-d3-9.recordio']
+2048/2048 [==============================] - 358s 175ms/step - loss: 2.2627 - accuracy: 0.3211
+Test/2: {'loss': 2.262695074081421, 'accuracy': 0.32108020782470703} 359
+Write results/2021-08-30_10:05:52/history.csv
+Write results/2021-08-30_10:05:52/report.txt
+val_accuracy    0.2589 (best)
+                0.2562 (last)
+test_accuracy   0.3211 (best)
+                0.3211 (last)
+Timing
+on_train_batch   |    10000 | 5074.57
+on_test_batch    |     2500 | 522.51
+on_test          |      100 | 525.11
+on_epoch         |      100 | 5950.81
+on_train         |        1 | 5951.06
+on_fit           |        1 | 5951.09
+after_fit        |        1 | 713.81
+overall          |        1 | 6668.58
+(tf25) dave@daves-air ChessAtAGlance % !!:p
+# python train.py --plan=v17-mask.toml
+
+
+2021-08-30
+==========
+
+fewer files, take out stockfish
+
+# python train.py --plan=v17-mask2.toml
+Epoch 100/100
+100/100 [==============================] - 55s 552ms/step - loss: 2.1492 - accuracy: 0.3455 - val_loss: 2.1654 - val_accuracy: 0.3439
+Write results/2021-08-30_12:23:46/last.model
+Test (last)
+2048/2048 [==============================] - 349s 171ms/step - loss: 2.1589 - accuracy: 0.3455
+Test: {'loss': 2.1588590145111084, 'accuracy': 0.3454766273498535} 349
+Test (best)
+Open ['mega-v5-9.recordio']
+2048/2048 [==============================] - 356s 174ms/step - loss: 2.1589 - accuracy: 0.3455
+Test/2: {'loss': 2.1588590145111084, 'accuracy': 0.3454766273498535} 357
+Write results/2021-08-30_12:23:46/history.csv
+Write results/2021-08-30_12:23:46/report.txt
+val_accuracy    0.3439 (best)
+                0.3439 (last)
+test_accuracy   0.3455 (best)
+                0.3455 (last)
+Timing
+
+-----
+
+# python train.py --plan=v17-mask3.toml
+
+100/100 [==============================] - 112s 1s/step - loss: 2.0890 - accuracy: 0.3593 - val_loss: 2.0881 - val_accuracy: 0.3586
+Epoch 100/100
+100/100 [==============================] - 111s 1s/step - loss: 2.0729 - accuracy: 0.3644 - val_loss: 2.1016 - val_accuracy: 0.3575
+Write results/2021-08-30_14:55:26/last.model
+Test (last)
+2048/2048 [==============================] - 707s 345ms/step - loss: 2.0938 - accuracy: 0.3593
+Test: {'loss': 2.093775510787964, 'accuracy': 0.3592720031738281} 707
+Test (best)
+Open ['mega-v5-9.recordio']
+2048/2048 [==============================] - 713s 348ms/step - loss: 2.0938 - accuracy: 0.3593
+Test/2: {'loss': 2.093775510787964, 'accuracy': 0.3592720031738281} 715
+Write results/2021-08-30_14:55:26/history.csv
+Write results/2021-08-30_14:55:26/report.txt
+val_accuracy    0.3587 (best)
+                0.3575 (last)
+test_accuracy   0.3593 (best)
+                0.3593 (last)
+
+
+
+
+# python train.py --plan=v17-mask4.toml
+Epoch 99/100
+100/100 [==============================] - 89s 893ms/step - loss: 2.2089 - accuracy: 0.3342 - val_loss: 2.2092 - val_accuracy: 0.3303
+Epoch 100/100
+100/100 [==============================] - 92s 926ms/step - loss: 2.1945 - accuracy: 0.3356 - val_loss: 2.2083 - val_accuracy: 0.3314
+Write results/2021-08-30_18:33:04/last.model
+Test (last)
+2048/2048 [==============================] - 529s 258ms/step - loss: 2.2037 - accuracy: 0.3344
+Test: {'loss': 2.203660726547241, 'accuracy': 0.3344287872314453} 528
+Test (best)
+Open ['mega-v5-9.recordio']
+2048/2048 [==============================] - 523s 255ms/step - loss: 2.2037 - accuracy: 0.3344
+Test/2: {'loss': 2.203660726547241, 'accuracy': 0.3344287872314453} 525
+Write results/2021-08-30_18:33:04/history.csv
+Write results/2021-08-30_18:33:04/report.txt
+val_accuracy    0.3314 (best)
+                0.3314 (last)
+test_accuracy   0.3344 (best)
+                0.3344 (last)
+--> previous is better

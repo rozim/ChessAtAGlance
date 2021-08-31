@@ -83,3 +83,28 @@ val_accuracy    0.3911 (best)
                 0.3905 (last)
 test_accuracy   0.3929 (best)
                 0.3929 (last)
+
+
+
+2021-08-30
+==========
+
+# all datasets, plus move masking
+
+python train.py --plan=v17-mask.toml
+Epoch 100/100
+100/100 [==============================] - 55s 552ms/step - loss: 2.2091 - accuracy: 0.3342 - val_loss: 2.5551 - val_accuracy: 0.2562
+Write results/2021-08-30_10:05:52/last.model
+Test (last)
+2048/2048 [==============================] - 354s 173ms/step - loss: 2.2627 - accuracy: 0.3211
+Test: {'loss': 2.262695074081421, 'accuracy': 0.32108020782470703} 353
+Test (best)
+Open ['mega-v5-9.recordio', 'stockfish-v5-d1-9.recordio', 'stockfish-v5-d3-9.recordio']
+2048/2048 [==============================] - 358s 175ms/step - loss: 2.2627 - accuracy: 0.3211
+Test/2: {'loss': 2.262695074081421, 'accuracy': 0.32108020782470703} 359
+Write results/2021-08-30_10:05:52/history.csv
+Write results/2021-08-30_10:05:52/report.txt
+val_accuracy    0.2589 (best)
+                0.2562 (last)
+test_accuracy   0.3211 (best)
+                0.3211 (last)

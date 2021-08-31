@@ -1,8 +1,6 @@
 data:
-- tf.data.experimental.copy_to_device
 
 lr:
-
 
 model:
 - review batch norm, bias
@@ -20,7 +18,6 @@ train:
 - AdamW: https://www.tensorflow.org/addons/api_docs/python/tfa/optimizers/AdamW
 - much longer training
 - eval slices
-- mask legal moves
 - float16 performance
 
             tf.keras.mixed_precision.experimental.set_policy('mixed_float16')
@@ -29,6 +26,7 @@ train:
 	    maybe also LossScaleOptimizer
 
 eval:
+- each test file is separate run, or somehow allow mutiple per-file test runs
 - weigh by #legal moves
 -- model.evaluate(sample_weight=)
 -- x=(inputs, targets, sample_weights) -- dataset in fit()

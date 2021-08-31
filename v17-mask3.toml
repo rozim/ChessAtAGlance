@@ -27,7 +27,7 @@ dropout = 0.0
 
 top_tower = [1024]
 
-num_filters = 64
+num_filters = 128
 num_resnet_cnn = 8
 do_flatten1x1 = true
 

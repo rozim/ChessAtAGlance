@@ -47,7 +47,6 @@ def create_model(mplan):
 
   if mask_legal_moves:
     legal_moves = Input(shape=[], name='legal_moves', dtype='int32', sparse=True)
-    #lambda x: legal_moves_mask(x),
     mask = tf.keras.layers.Lambda(legal_moves_mask,
                                   name='legal_moves_to_one_hot',
                                   output_shape=[NUM_CLASSES])(legal_moves)
