@@ -10,6 +10,7 @@ class objdict(dict):
 def _fix_defaults(plan):
   mplan = plan.model
   mplan.mask_legal_moves = mplan.get('mask_legal_moves', False)
+  assert 'num_cnn' not in mplan, 'Obsolete'
 
   dplan = plan.data
   dplan.prefetch_to_device = dplan.get('prefetch_to_device', False)

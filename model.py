@@ -67,28 +67,21 @@ def create_model(mplan):
   # out: bs, x, y, chan
   #          8, 8, 20
 
-  # tbd project if skip conn
-  if 'num_cnn' in mplan:
-    for i in range(mplan.num_cnn):
-      x = my_conv2d(name=f'cnn_{i}')(x)
-      x = my_bn(name=f'bn_{i}')(x)
-      x = my_activation(name=f'act_{i}')(x)
-  else:
-    # Project to right size so skip connections work.
-    x = my_conv2d(name=f'cnn_project')(x)
-    x = my_bn(name=f'bn_project')(x)
-    x = my_activation(name=f'act_project')(x)
+  # Project to right size so skip connections work.
+  x = my_conv2d(name=f'cnn_project')(x)
+  x = my_bn(name=f'bn_project')(x)
+  x = my_activation(name=f'act_project')(x)
 
-    for i in range(mplan.num_resnet_cnn):
-      skip = x
-      x = my_conv2d(name=f'cnn_{i}a')(x)
-      x = my_bn(name=f'bn_{i}a')(x)
-      x = my_activation(name=f'act_{i}a')(x)
+  for i in range(mplan.num_resnet_cnn):
+    skip = x
+    x = my_conv2d(name=f'cnn_{i}a')(x)
+    x = my_bn(name=f'bn_{i}a')(x)
+    x = my_activation(name=f'act_{i}a')(x)
 
-      x = my_conv2d(name=f'cnn_{i}b')(x)
-      x = my_bn(name=f'bn_{i}b')(x)
-      x = Add(name='skip_{}b'.format(i))([x, skip])
-      x = my_activation(name=f'act_{i}b')(x)
+    x = my_conv2d(name=f'cnn_{i}b')(x)
+    x = my_bn(name=f'bn_{i}b')(x)
+    x = Add(name='skip_{}b'.format(i))([x, skip])
+    x = my_activation(name=f'act_{i}b')(x)
 
   if mplan.do_flatten1x1:
     x = Conv2D(
