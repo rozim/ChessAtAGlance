@@ -6,17 +6,11 @@ import tensorflow as tf
 from tensorflow import keras
 from tensorflow.keras import layers
 from tensorflow.keras import regularizers
-from tensorflow.keras.callbacks import TerminateOnNaN, EarlyStopping, ModelCheckpoint, LambdaCallback, Callback
 from tensorflow.keras.layers import BatchNormalization, LayerNormalization, Flatten, Add, Conv2D, Permute, Multiply
-from tensorflow.keras.layers import Dense, Input, Embedding, Concatenate, Activation
-from tensorflow.keras.layers import GaussianNoise, LeakyReLU, Softmax
-from tensorflow.keras.layers.experimental.preprocessing import IntegerLookup, Discretization
-from tensorflow.keras.losses import SparseCategoricalCrossentropy
+from tensorflow.keras.layers import Dense, Input, Embedding, Concatenate, Activation, GlobalAveragePooling2D
 
-from tensorflow.keras.metrics import AUC
 from tensorflow.keras.models import Model
 from tensorflow.keras.optimizers import Adam, Ftrl
-from tensorflow.keras.optimizers.schedules import CosineDecayRestarts
 from tensorflow.python.keras import backend
 
 from plan import load_plan
@@ -27,8 +21,8 @@ from data import legal_moves_mask, NUM_CLASSES, BOARD_SHAPE
 def squeeze_excite_block(i, in_block, ch, ratio=16):
   x = GlobalAveragePooling2D(name=f'se_global_{i}')(in_block)
   x = Dense(ch//ratio, activation='relu', name=f'se_dense_{i}a')(x)
-  x = Dense(ch, activation='sigmoid', name=f'se_dense_{i}a'))(x)
-  return Multiply(name=f'se_mul_{i}'))([in_block, x])
+  x = Dense(ch, activation='sigmoid', name=f'se_dense_{i}b')(x)
+  return Multiply(name=f'se_mul_{i}')([in_block, x])
 
 
 def create_model(mplan):
@@ -80,8 +74,12 @@ def create_model(mplan):
 
     x = my_conv2d(name=f'cnn_{i}b')(x)
     x = my_bn(name=f'bn_{i}b')(x)
-    x = Add(name='skip_{}b'.format(i))([x, skip])
+    if not mplan.do_squeeze_excite:
+      x = Add(name='skip_{}b'.format(i))([x, skip])
     x = my_activation(name=f'act_{i}b')(x)
+
+    if mplan.do_squeeze_excite:
+      x = squeeze_excite_block(i, in_block=x, ch=mplan.num_filters, ratio=16)
 
   if mplan.do_flatten1x1:
     x = Conv2D(
