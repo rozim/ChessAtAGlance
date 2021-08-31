@@ -8,7 +8,7 @@ from tensorflow.keras import layers
 from tensorflow.keras import regularizers
 from tensorflow.keras.callbacks import TerminateOnNaN, EarlyStopping, ModelCheckpoint, LambdaCallback, Callback
 from tensorflow.keras.layers import BatchNormalization, LayerNormalization, Flatten, Add, Conv2D, Permute, Multiply
-from tensorflow.keras.layers import Dense, Dropout, Input, Embedding, Concatenate, Activation
+from tensorflow.keras.layers import Dense, Input, Embedding, Concatenate, Activation
 from tensorflow.keras.layers import GaussianNoise, LeakyReLU, Softmax
 from tensorflow.keras.layers.experimental.preprocessing import IntegerLookup, Discretization
 from tensorflow.keras.losses import SparseCategoricalCrossentropy
@@ -51,7 +51,6 @@ def create_model(mplan):
   my_bn = functools.partial(BatchNormalization, momentum=mplan.bn_momentum)
 
   my_activation = functools.partial(Activation, mplan.activation)
-  my_dropout = functools.partial(Dropout, mplan.dropout)
 
   if mask_legal_moves:
     legal_moves = Input(shape=[], name='legal_moves', dtype='int32', sparse=True)
@@ -74,30 +73,22 @@ def create_model(mplan):
       x = my_conv2d(name=f'cnn_{i}')(x)
       x = my_bn(name=f'bn_{i}')(x)
       x = my_activation(name=f'act_{i}')(x)
-      if mplan.dropout > 0.0:
-        x = my_dropout(name=f'drop_{i}')(x)
   else:
     # Project to right size so skip connections work.
     x = my_conv2d(name=f'cnn_project')(x)
     x = my_bn(name=f'bn_project')(x)
     x = my_activation(name=f'act_project')(x)
-    if mplan.dropout > 0.0:
-      x = my_dropout(name=f'drop_project')(x)
 
     for i in range(mplan.num_resnet_cnn):
       skip = x
       x = my_conv2d(name=f'cnn_{i}a')(x)
       x = my_bn(name=f'bn_{i}a')(x)
       x = my_activation(name=f'act_{i}a')(x)
-      if mplan.dropout > 0.0:
-        x = my_dropout(name=f'drop_{i}a')(x)
 
       x = my_conv2d(name=f'cnn_{i}b')(x)
       x = my_bn(name=f'bn_{i}b')(x)
       x = Add(name='skip_{}b'.format(i))([x, skip])
       x = my_activation(name=f'act_{i}b')(x)
-      if mplan.dropout > 0.0:
-        x = my_dropout(name=f'drop_{i}b')(x)
 
   if mplan.do_flatten1x1:
     x = Conv2D(
@@ -110,8 +101,6 @@ def create_model(mplan):
       name='cnn_flatten')(x)
     x = my_bn(name=f'bn_flatten')(x)
     x = my_activation(name=f'act_flatten')(x)
-    if mplan.dropout > 0.0:
-      x = my_dropout(name=f'drop_flatten')(x)
 
   x = Flatten()(x)
 
@@ -119,8 +108,6 @@ def create_model(mplan):
     x = my_dense(w, name=f'top_{i}')(x)
     x = my_bn(name=f'top_bn_{i}')(x)
     x = my_activation(name=f'top_act_{i}')(x)
-    if mplan.dropout > 0.0:
-      x = my_dropout(name=f'top_drop_{i}')(x)
 
   x = my_dense(NUM_CLASSES, name='logits', activation=None)(x)
 
