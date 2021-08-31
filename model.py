@@ -74,12 +74,15 @@ def create_model(mplan):
 
     x = my_conv2d(name=f'cnn_{i}b')(x)
     x = my_bn(name=f'bn_{i}b')(x)
-    if not mplan.do_squeeze_excite:
-      x = Add(name='skip_{}b'.format(i))([x, skip])
+    x = Add(name='skip_{}b'.format(i))([x, skip])
     x = my_activation(name=f'act_{i}b')(x)
+    # This might be the 'Standard SE Block' however it's not clear if the
+    # activation a few lines down stays there.
+    # https://blog.paperspace.com/channel-attention-squeeze-and-excitation-networks/
 
     if mplan.do_squeeze_excite:
       x = squeeze_excite_block(i, in_block=x, ch=mplan.num_filters, ratio=16)
+
 
   if mplan.do_flatten1x1:
     x = Conv2D(

@@ -693,3 +693,27 @@ val_accuracy    0.3314 (best)
 test_accuracy   0.3344 (best)
                 0.3344 (last)
 --> previous is better
+
+2021-08-31
+==========
+
+# python train.py --plan=v18-squeeze1.toml
+100/100 [==============================] - 128s 1s/step - loss: 2.1861 - accuracy: 0.3392 - val_loss: 2.2000 - val_accuracy: 0.3339
+Epoch 100/100
+100/100 [==============================] - 128s 1s/step - loss: 2.2205 - accuracy: 0.3306 - val_loss: 2.2425 - val_accuracy: 0.3269
+Write results/2021-08-30_23:09:59/last.model
+Test (last)
+1024/1024 [==============================] - 374s 365ms/step - loss: 2.2407 - accuracy: 0.3281
+Test: {'loss': 2.240713596343994, 'accuracy': 0.3280668258666992} 374
+Test (best)
+Open ['mega-v5-9.recordio']
+1024/1024 [==============================] - 377s 368ms/step - loss: 2.2407 - accuracy: 0.3281
+Test/2: {'loss': 2.240713596343994, 'accuracy': 0.3280668258666992} 379
+Write results/2021-08-30_23:09:59/history.csv
+Write results/2021-08-30_23:09:59/report.txt
+val_accuracy    0.3368 (best)
+                0.3269 (last)
+test_accuracy   0.3281 (best)
+                0.3281 (last)
+
+--> not great
