@@ -23,6 +23,14 @@ from plan import load_plan
 from data import legal_moves_mask, NUM_CLASSES, BOARD_SHAPE
 
 
+# https://towardsdatascience.com/squeeze-and-excitation-networks-9ef5e71eacd7
+def squeeze_excite_block(i, in_block, ch, ratio=16):
+  x = GlobalAveragePooling2D(name=f'se_global_{i}')(in_block)
+  x = Dense(ch//ratio, activation='relu', name=f'se_dense_{i}a')(x)
+  x = Dense(ch, activation='sigmoid', name=f'se_dense_{i}a'))(x)
+  return Multiply(name=f'se_mul_{i}'))([in_block, x])
+
+
 def create_model(mplan):
   kernel_regularizer = regularizers.l2(mplan.l2)
   data_format = 'channels_last'
