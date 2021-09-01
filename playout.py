@@ -13,10 +13,13 @@ import pyspiel
 
 from open_spiel.python.observation import make_observation
 from data import NUM_CLASSES
+from data import create_input_generator_rio
+from plan import load_plan
 
 FLAGS = flags.FLAGS
 
 flags.DEFINE_string('model', None, '')
+flags.DEFINE_string('plan', None, '')
 flags.DEFINE_string('fen', None, '')
 
 
@@ -28,10 +31,31 @@ def main(argv):
   tf.compat.v1.logging.set_verbosity(tf.compat.v1.logging.ERROR)
   os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
 
+  plan = load_plan(FLAGS.plan)
+  game = pyspiel.load_game('chess')
+  ds = create_input_generator_rio(plan.data,
+                                  ['mega-v5-9.recordio'],
+                                  is_train=False, verbose=True, do_repeat=False, return_legal_moves=True)
+
+
+
   model = tf.keras.models.load_model(FLAGS.model, {'tf': tf,
                                                    'NUM_CLASSES': NUM_CLASSES})
 
-  game = pyspiel.load_game('chess')
+  p2 = model.predict(ds, steps=1)
+  print('p2: ', p2.shape)
+  sys.exit(0)
+  for ent in iter(ds):
+    #print('ent=', ent)
+
+    print('p3', model.predict_on_batch(ent))
+    print('p1', model(ent))
+
+
+    break
+
+
+
   #game.deserialize_state('rnbqk2r/5pb1/p1pppnp1/1p5p/3P4/PPPBPNPP/5P2/RNBQK2R w KQkq - 1 10')
 
   #help(game)
@@ -57,8 +81,57 @@ def main(argv):
     print('FEN: ', state)
     print('REW: ', state.returns())
     board = make_observation(game).tensor.reshape(1, 20, 8, 8)
+    legal_moves = np.array(state.legal_actions())
+    legal_moves = tf.sparse.from_dense(legal_moves)
+    print('board=', board.shape)
+    print('legal_moves=', legal_moves.shape)
 
-    logits = model.predict([board])[0]
+    try:
+      logits = model([[board, legal_moves]], training=False)
+      print('yes/1', logits.shape)
+    except:
+      e = sys.exc_info()[0]
+      print('FAIL/1: ', e)
+
+    try:
+      logits = model({'board': board, 'legal_moves': legal_moves}, training=False)
+      print('yes/1b', logits.shape)
+    except:
+      e = sys.exc_info()[0]
+      print('FAIL/1b: ', e)
+
+    try:
+      logits = model([{'board': board, 'legal_moves': legal_moves}], training=False)
+      print('yes/1c', logits.shape)
+    except:
+      e = sys.exc_info()[0]
+      print('FAIL/1c: ', e)
+
+    try:
+      logits = model({'board': [board], 'legal_moves': [legal_moves]}, training=False)
+      print('yes/1d', logits.shape)
+    except:
+      e = sys.exc_info()[0]
+      print('FAIL/1d: ', e)
+
+    try:
+      logits = model.predict(x=[board, legal_moves])
+      print('yes/2', logits.shape)
+    except:
+      e = sys.exc_info()[0]
+      print('FAIL/2: ', e)
+
+    try:
+      logits = model.predict_on_batch(x=[board, legal_moves])
+      print('yes/3', logits.shape)
+    except:
+      e = sys.exc_info()[0]
+      print('FAIL/3: ', e)
+    logits = model.predict_on_batch(x=[board, legal_moves])
+
+    logits = logits[0]
+
+    sys.exit(0)
 
     logits2 = []
     i2a = []
