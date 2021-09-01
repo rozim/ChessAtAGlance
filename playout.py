@@ -44,15 +44,12 @@ def main(argv):
 
   p2 = model.predict(ds, steps=1)
   print('p2: ', p2.shape)
-  sys.exit(0)
-  for ent in iter(ds):
+  #sys.exit(0)
+  #for ent in iter(ds):
     #print('ent=', ent)
-
-    print('p3', model.predict_on_batch(ent))
-    print('p1', model(ent))
-
-
-    break
+    #print('p3', model.predict_on_batch(ent))
+    #print('p1', model(ent))
+    #break
 
 
 
@@ -82,84 +79,29 @@ def main(argv):
     print('REW: ', state.returns())
     board = make_observation(game).tensor.reshape(1, 20, 8, 8)
     legal_moves = np.array(state.legal_actions())
+    legal_moves = np.reshape(legal_moves, (1, -1))
     legal_moves = tf.sparse.from_dense(legal_moves)
-    print('board=', board.shape)
-    print('legal_moves=', legal_moves.shape)
-
-    try:
-      logits = model([[board, legal_moves]], training=False)
-      print('yes/1', logits.shape)
-    except:
-      e = sys.exc_info()[0]
-      print('FAIL/1: ', e)
-
-    try:
-      logits = model({'board': board, 'legal_moves': legal_moves}, training=False)
-      print('yes/1b', logits.shape)
-    except:
-      e = sys.exc_info()[0]
-      print('FAIL/1b: ', e)
-
-    try:
-      logits = model([{'board': board, 'legal_moves': legal_moves}], training=False)
-      print('yes/1c', logits.shape)
-    except:
-      e = sys.exc_info()[0]
-      print('FAIL/1c: ', e)
-
-    try:
-      logits = model({'board': [board], 'legal_moves': [legal_moves]}, training=False)
-      print('yes/1d', logits.shape)
-    except:
-      e = sys.exc_info()[0]
-      print('FAIL/1d: ', e)
-
-    try:
-      logits = model.predict(x=[board, legal_moves])
-      print('yes/2', logits.shape)
-    except:
-      e = sys.exc_info()[0]
-      print('FAIL/2: ', e)
-
-    try:
-      logits = model.predict_on_batch(x=[board, legal_moves])
-      print('yes/3', logits.shape)
-    except:
-      e = sys.exc_info()[0]
-      print('FAIL/3: ', e)
-    logits = model.predict_on_batch(x=[board, legal_moves])
-
+    logits = model.predict_on_batch(x=[board, [legal_moves]])
     logits = logits[0]
+    softmax = tf.nn.softmax(np.array(logits, dtype='float32')).numpy()
+    #softmax /= softmax.sum() # try to get closer to 1.0
 
-    sys.exit(0)
-
-    logits2 = []
-    i2a = []
-
-    for i, a in enumerate(state.legal_actions()):
-      logits2.append(logits[a])
-      i2a.append(a)
-
-    softmax2 = tf.nn.softmax(np.array(logits2, dtype='float32')).numpy()
-    softmax2 /= softmax2.sum() # try to get closer to 1.0
-
-    hack = []
-    for i, score in enumerate(softmax2):
-      hack.append((score,
-                  state.action_to_string(i2a[i])))
-    hack.sort(reverse=True)
-
-    for ent in hack:
-      if ent[0] < 0.02:
-        break
-      print(f2(ent[0]), ent[1])
-
-    choice_action = np.random.choice(i2a, p=softmax2)
+    topn_idx = (-softmax).argsort()[:3]
+    print('inx: ', topn_idx)
+    scores = []
+    for ent in topn_idx:
+      scores.append(softmax[ent])
+      print(ent, softmax[ent],
+            state.action_to_string(ent))
+    topn_scores = np.array(scores)
+    topn_scores /= topn_scores.sum()
+    choice_action = np.random.choice(topn_idx, p=topn_scores)
     san = state.action_to_string(choice_action)
     print('a2s: ', san)
     sans.append(san)
 
     state.apply_action_with_legality_check(choice_action)
+
   print()
 
   print('x0', state.is_terminal())
