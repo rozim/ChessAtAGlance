@@ -1,0 +1,52 @@
+
+[data]
+train    = [
+	 'mega-v5-0.recordio',
+	 'mega-v5-1.recordio',
+	 'mega-v5-2.recordio',
+	 'mega-v5-3.recordio',
+	 'mega-v5-4.recordio',
+	 'mega-v5-5.recordio',
+	 'mega-v5-6.recordio',
+	 'mega-v5-7.recordio',
+	 ]
+
+
+validate = ['mega-v5-8.recordio']
+
+test     = ['mega-v5-9.recordio']
+
+shuffle = 10240
+batch = 1024
+prefetch = 1
+
+[model]
+do_squeeze_excite = true
+squeeze_excite_ratio = 8
+
+l2 = 0.0
+activation = 'relu'
+dropout = 0.0
+
+top_tower = [1024]
+
+num_filters = 128
+num_resnet_cnn = 8
+do_flatten1x1 = true
+
+bn_momentum = 0.99
+
+mask_legal_moves = true
+
+[train]
+optimizer = 'Adam'
+epochs = 100
+
+steps_per_epoch = 100
+validation_steps = 25
+test_steps = 1024
+
+lr_schedule = 'warm_linear'
+lr = 0.01
+warmup = 3
+lr_max_decay_factor = 0.5
