@@ -8,6 +8,7 @@ model:
 - squeeze/excite connections
 https://towardsdatascience.com/squeeze-and-excitation-networks-9ef5e71eacd7
 https://github.com/RayXie29/SENet_Keras/blob/master/SENet.py
+-- try he_normal because of https://github.com/RayXie29/SENet_Keras/blob/master/SENet.py
 
 - 1x1 flatten should be configurable -- here there are 2 filters, then no dense
   https://medium.com/applied-data-science/alphago-zero-explained-in-one-diagram-365f5abf67e0

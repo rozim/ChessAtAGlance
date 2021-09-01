@@ -770,3 +770,25 @@ after_fit        |        1 | 695.45
 overall          |        1 | 13096.54
 
 --> BAD
+
+
+# python train.py --plan=v18-squeeze4.toml
+
+Epoch 100/100
+100/100 [==============================] - 146s 1s/step - loss: 2.4512 - accuracy: 0.2800 - val_loss: 2.5133 - val_accuracy: 0.2738
+Write results/2021-08-31_17:33:17/last.model
+Test (last)
+1024/1024 [==============================] - 456s 445ms/step - loss: 2.5112 - accuracy: 0.2761
+Test: {'loss': 2.5112030506134033, 'accuracy': 0.27611827850341797} 456
+Test (best)
+Open ['mega-v5-9.recordio']
+1024/1024 [==============================] - 435s 425ms/step - loss: 2.5112 - accuracy: 0.2761
+Test/2: {'loss': 2.5112030506134033, 'accuracy': 0.27611827850341797} 437
+Write results/2021-08-31_17:33:17/history.csv
+Write results/2021-08-31_17:33:17/report.txt
+val_accuracy    0.3222 (best)
+                0.2738 (last)
+test_accuracy   0.2761 (best)
+                0.2761 (last)
+
+--> BAD

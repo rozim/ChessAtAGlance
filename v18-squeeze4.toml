@@ -22,7 +22,7 @@ prefetch = 1
 
 [model]
 do_squeeze_excite = true
-squeeze_excite_ratio = 8
+squeeze_excite_ratio = 32
 
 l2 = 0.0
 activation = 'relu'
