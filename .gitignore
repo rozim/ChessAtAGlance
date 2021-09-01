@@ -46,3 +46,9 @@ flatten
 nohup.out
 *.recordio
 leveldb_read
+
+addons/
+models/
+tf_utils/
+tensorflow_addons/
+tf_utils_callbacks/
