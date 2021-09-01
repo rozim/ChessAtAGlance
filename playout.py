@@ -12,10 +12,10 @@ FLAGS = flags.FLAGS
 import pyspiel
 
 from open_spiel.python.observation import make_observation
+from data import NUM_CLASSES
 
 FLAGS = flags.FLAGS
 
-flags.DEFINE_string('plan', None, 'toml file')
 flags.DEFINE_string('model', None, '')
 flags.DEFINE_string('fen', None, '')
 
@@ -28,7 +28,8 @@ def main(argv):
   tf.compat.v1.logging.set_verbosity(tf.compat.v1.logging.ERROR)
   os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
 
-  model = tf.keras.models.load_model(FLAGS.model)
+  model = tf.keras.models.load_model(FLAGS.model, {'tf': tf,
+                                                   'NUM_CLASSES': NUM_CLASSES})
 
   game = pyspiel.load_game('chess')
   #game.deserialize_state('rnbqk2r/5pb1/p1pppnp1/1p5p/3P4/PPPBPNPP/5P2/RNBQK2R w KQkq - 1 10')
