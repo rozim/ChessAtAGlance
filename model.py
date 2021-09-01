@@ -76,7 +76,7 @@ def create_model(mplan):
     x = my_bn(name=f'bn_{i}b')(x)
     x = Add(name='skip_{}b'.format(i))([x, skip])
     if mplan.do_squeeze_excite:
-      x = squeeze_excite_block(i, in_block=x, ch=mplan.num_filters, ratio=16)
+      x = squeeze_excite_block(i, in_block=x, ch=mplan.num_filters, ratio=mplan.squeeze_excite_ratio)
     x = my_activation(name=f'act_{i}b')(x)
 
     # This might be the 'Standard SE Block' however it's not clear if the

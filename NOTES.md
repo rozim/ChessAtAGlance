@@ -738,4 +738,35 @@ val_accuracy    0.3464 (best)
 test_accuracy   0.3488 (best)
                 0.3488 (last)
 
+[main f335904] this helps, reoreder model squeeze excite
 --> reordering model a bit changes things
+
+
+# python train.py --plan=v18-squeeze3.toml
+Epoch 100/100
+100/100 [==============================] - 117s 1s/step - loss: 2.2887 - accuracy: 0.3169 - val_loss: 2.3056 - val_accuracy: 0.3117
+Write results/2021-08-31_11:59:14/last.model
+Test (last)
+1024/1024 [==============================] - 348s 340ms/step - loss: 2.2987 - accuracy: 0.3146
+Test: {'loss': 2.2987234592437744, 'accuracy': 0.3145589828491211} 348
+Test (best)
+Open ['mega-v5-9.recordio']
+1024/1024 [==============================] - 345s 337ms/step - loss: 2.2987 - accuracy: 0.3146
+Test/2: {'loss': 2.2987234592437744, 'accuracy': 0.3145589828491211} 347
+Write results/2021-08-31_11:59:14/history.csv
+Write results/2021-08-31_11:59:14/report.txt
+val_accuracy    0.3117 (best)
+                0.3117 (last)
+test_accuracy   0.3146 (best)
+                0.3146 (last)
+Timing
+on_train_batch   |    10000 | 11017.91
+on_test_batch    |     2500 | 891.22
+on_test          |      100 | 894.34
+on_epoch         |      100 | 12395.91
+on_train         |        1 | 12396.17
+on_fit           |        1 | 12396.20
+after_fit        |        1 | 695.45
+overall          |        1 | 13096.54
+
+--> BAD

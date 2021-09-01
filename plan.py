@@ -13,6 +13,10 @@ def _fix_defaults(plan):
   assert 'num_cnn' not in mplan, 'Obsolete'
   mplan.do_squeeze_excite = mplan.get('do_squeeze_excite', False)
 
+  for k, v in { 'squeeze_excite_ratio': 16}.items():
+    if k not in mplan:
+      mplan.set(k, v)
+
   dplan = plan.data
   dplan.prefetch_to_device = dplan.get('prefetch_to_device', False)
 
