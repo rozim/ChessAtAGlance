@@ -1,0 +1,8 @@
+[model]
+l2 = 0.0
+num_filters = 32
+num_resnet_blocks = 4
+top_tower = [256, 256, 256]
+
+[train]
+lr = 0.01

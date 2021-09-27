@@ -43,12 +43,12 @@ def _extract(blob):
 
 
 def main(argv):
-  #tf.compat.v1.logging.set_verbosity(tf.compat.v1.logging.ERROR)
+  tf.compat.v1.logging.set_verbosity(tf.compat.v1.logging.ERROR)
   logging.set_verbosity('error')
   os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
   warnings.filterwarnings('ignore', category=Warning)
 
-  if False:
+  if True:
     ds = tf.data.TFRecordDataset(['easy.rio'], 'ZLIB', num_parallel_reads=1)
     ds = ds.map(_extract)
     ds = ds.batch(2)
