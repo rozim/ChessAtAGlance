@@ -47,26 +47,47 @@ def _extract(blob):
           t['best_move'])
 
 
-class CustomDense(layers.Layer):
-  def __init__(self, units=32):
-    super(CustomDense, self).__init__()
-    self.units = units
+class ResnetBlock(layers.Layer):
+  def __init__(self, num_filters, l2):
+    super(ResnetBlock, self).__init__()
+    self.num_filters = num_filters
+    self.l2 = l2
 
   def build(self, input_shape):
-    self.w = self.add_weight(
-      shape=(input_shape[-1], self.units),
-      initializer="random_normal",
-      trainable=True,
-    )
-    self.b = self.add_weight(
-      shape=(self.units,), initializer="random_normal", trainable=True
-    )
+    kernel_regularizer = None
+    data_format = 'channels_last'
+    my_conv2d = functools.partial(
+      Conv2D,
+      filters=self.num_filters,
+      kernel_size=(3, 3),
+      kernel_regularizer=kernel_regularizer,
+      data_format=data_format,
+      padding='same',
+      use_bias=False)
 
-  def call(self, inputs):
-    return tf.matmul(inputs, self.w) + self.b
+    self.c1 = my_conv2d()
+    self.relu1 = ReLU()
+    self.add = Add()
+    self.c2 = my_conv2d()
+    self.relu2 = ReLU()
+
+
+  def call(self, x):
+    skip = x
+    x = self.c1(x)
+    x = self.relu1(x)
+    x = self.c2(x)
+
+    x = self.add([x, skip])
+
+    x = self.relu2(x)
+    return x
+
 
   def get_config(self):
-    return {"units": self.units}
+    return {'num_filters': self.num_filters,
+            'l2': self.l2}
+
 
 def create_model(mplan):
   kernel_regularizer = regularizers.l2(mplan.l2)
@@ -97,16 +118,20 @@ def create_model(mplan):
   x = my_conv2d(name=f'cnn_project')(x)
   x = ReLU()(x)
 
-  seq = tf.keras.Sequential()
+  # for i in range(mplan.num_resnet_blocks):
+  #   skip = x
+  #   x = my_conv2d(name=f'cnn_{i}a')(x)
+  #   x = ReLU(name=f'relu_{i}a')(x)
 
-  for i in range(mplan.num_resnet_blocks):
-    skip = x
-    x = my_conv2d(name=f'cnn_{i}a')(x)
-    x = ReLU(name=f'relu_{i}a')(x)
+  #   x = my_conv2d(name=f'cnn_{i}b')(x)
+  #   x = Add(name='skip_{}b'.format(i))([x, skip])
+  #   x = ReLU(name=f'relu_{i}b')(x)
 
-    x = my_conv2d(name=f'cnn_{i}b')(x)
-    x = Add(name='skip_{}b'.format(i))([x, skip])
-    x = ReLU(name=f'relu_{i}b')(x)
+  blocks = [ResnetBlock(mplan.num_filters, mplan.l2) for _ in range(4)]
+  for j in range(2):
+    for i in range(mplan.num_resnet_blocks):
+      for block in blocks:
+        x = block(x)
 
   x = Flatten()(x)
 
