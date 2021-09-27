@@ -48,7 +48,7 @@ def main(argv):
   os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
   warnings.filterwarnings('ignore', category=Warning)
 
-  if True:
+  if False:
     ds = tf.data.TFRecordDataset(['easy.rio'], 'ZLIB', num_parallel_reads=1)
     ds = ds.map(_extract)
     ds = ds.batch(2)
@@ -70,7 +70,7 @@ def main(argv):
     output_buffer_size=(4 * 1024 * 1024))
 
   #rio.write(ex.SerializeToString())
-  df = df.head(100000)
+  #df = df.head(100000)
   df = df.sort_values('Rating')
   with tf.io.TFRecordWriter('easy.rio', opts) as rio:
 
