@@ -26,14 +26,15 @@ from tensorflow.keras.models import Model
 from tensorflow.keras.optimizers import SGD
 
 from tensorflow.python.keras import backend
+from tensorflow.keras.losses import CategoricalCrossentropy
 
-NUM_CLASSES = 4672
-
+#FLAT_SHAPE = (12 * 8 * 8,)
+SHAPE_3D = (12, 8, 8)
 FEATURES = {
-  'board': tf.io.FixedLenFeature((1280,), tf.float32),
-  'best_move': tf.io.FixedLenFeature([], tf.int64),
-  'rating': tf.io.FixedLenFeature([], tf.int64),
-  'uci': tf.io.FixedLenFeature([], tf.string),
+  'puzzle': tf.io.FixedLenFeature(SHAPE_3D, tf.float32),
+  'solution': tf.io.FixedLenFeature([8, 8, 1], tf.float32),
+  'rating': tf.io.FixedLenFeature(1, tf.int64),
+  'refutation_uci': tf.io.FixedLenFeature(1, tf.string),
 }
 
 class objdict(dict):
@@ -41,28 +42,29 @@ class objdict(dict):
     assert name in self, (name, self.keys())
     return self[name]
 
+
 def _extract(blob):
   t = tf.io.parse_example(blob, features=FEATURES)
-  return ((t['board'], t['rating'], t['uci']),
-          t['best_move'])
+  return ((t['puzzle'],),
+          t['solution'])
 
 
-class ResnetBlock(layers.Layer):
+class BasicBlock(layers.Layer):
   def __init__(self, num_filters, l2):
-    super(ResnetBlock, self).__init__()
+    super(BasicBlock, self).__init__()
     self.num_filters = num_filters
     self.l2 = l2
 
   def build(self, input_shape):
     kernel_regularizer = None
-    data_format = 'channels_last'
+    data_format = 'channels_last' # (batch_size, height, width, channels)
     my_conv2d = functools.partial(
       Conv2D,
       filters=self.num_filters,
       kernel_size=(3, 3),
       kernel_regularizer=kernel_regularizer,
       data_format=data_format,
-      padding='same',
+      padding='same', # padding=1 in paper
       use_bias=False)
 
     self.c1 = my_conv2d()
@@ -102,11 +104,9 @@ def create_model(mplan):
     padding='same',
     use_bias=False)
 
-  my_dense = functools.partial(Dense,
-                               kernel_regularizer=kernel_regularizer)
-
-  board = Input(shape=(1280,), name='board', dtype='float32')
-  x = Reshape((20, 8, 8), input_shape=(1280,))(board)
+  board = Input(shape=SHAPE_3D, name='puzzle', dtype='float32')
+  x = board
+  #x = Reshape(SHAPE_3D, input_shape=FLAT_SHAPE)(board)
   # in: bs, chan, x, y
   #         20    8, 8
   #     0   1     2  3
@@ -118,30 +118,49 @@ def create_model(mplan):
   x = my_conv2d(name=f'cnn_project')(x)
   x = ReLU()(x)
 
-  # for i in range(mplan.num_resnet_blocks):
-  #   skip = x
-  #   x = my_conv2d(name=f'cnn_{i}a')(x)
-  #   x = ReLU(name=f'relu_{i}a')(x)
+  block = BasicBlock(mplan.num_filters, mplan.l2)
+  for i in range(mplan.num_layers):
+    x = block(x)
 
-  #   x = my_conv2d(name=f'cnn_{i}b')(x)
-  #   x = Add(name='skip_{}b'.format(i))([x, skip])
-  #   x = ReLU(name=f'relu_{i}b')(x)
-
-  blocks = [ResnetBlock(mplan.num_filters, mplan.l2) for _ in range(4)]
-  for j in range(2):
-    for i in range(mplan.num_resnet_blocks):
-      for block in blocks:
-        x = block(x)
-
-  x = Flatten()(x)
-
-  for i, w in enumerate(mplan.top_tower):
-    x = my_dense(w, name=f'top_{i}')(x)
-    x = ReLU()(x)
-
-  x = my_dense(NUM_CLASSES, name='logits', activation=None)(x)
+  x = Conv2D(filters=32,
+             kernel_size=(3, 3),
+             kernel_regularizer=kernel_regularizer,
+             data_format=data_format,
+             padding='same',
+             use_bias=False,
+             name='head_conv2')(x)
+  x = Conv2D(filters=8,
+             kernel_size=(3, 3),
+             kernel_regularizer=kernel_regularizer,
+             data_format=data_format,
+             padding='same',
+             use_bias=False,
+             name='head_conv3')(x)
+  x = Conv2D(filters=1,
+             kernel_size=(3, 3),
+             kernel_regularizer=kernel_regularizer,
+             data_format=data_format,
+             padding='same',
+             use_bias=False,
+             name='head_conv4')(x)
 
   return Model(inputs=[board], outputs=x)
+
+
+
+def get_data(tplan):
+  ds = tf.data.TFRecordDataset(['easy-v3.rio'], 'ZLIB', num_parallel_reads=1)
+  ds = ds.map(_extract)
+  ds = ds.batch(tplan.batch_size)
+  return ds
+
+
+class LogLrCallback(Callback):
+  def on_epoch_end(self, epoch, logs):
+    try:
+      logs['lr'] = float(backend.get_value(self.model.optimizer.lr(epoch)))
+    except TypeError:
+      logs['lr'] = float(backend.get_value(self.model.optimizer.lr))
 
 
 def main(argv):
@@ -151,20 +170,40 @@ def main(argv):
   warnings.filterwarnings('ignore', category=Warning)
 
   if True:
-    ds = tf.data.TFRecordDataset(['easy.rio'], 'ZLIB', num_parallel_reads=1)
+    ds = tf.data.TFRecordDataset(['easy-v3.rio'], 'ZLIB', num_parallel_reads=1)
     ds = ds.map(_extract)
     ds = ds.batch(2)
-    for ent in ds:
-      print('b', ent[0][0])
-      print('r', ent[0][1].numpy())
-      print('uci', ent[0][2])
-      print('action', ent[1].numpy())
-      break
+    for features, label in ds:
+      for f in features:
+        print('f: ', f)
+      print('label: ', label)
 
+      break
 
   mplan = toml.load('easy.toml', objdict)
   model = create_model(mplan.model)
   model.summary()
+
+  tplan = mplan.train
+  optimizer = tf.keras.optimizers.SGD(
+    learning_rate=tplan.lr,
+    momentum=tplan.momentum
+  )
+
+  model.compile(optimizer=optimizer,
+                loss=CategoricalCrossentropy())
+
+  ds = get_data(tplan)
+
+  callbacks = [TerminateOnNaN(),
+               LogLrCallback()]
+
+  print('# before fit')
+  history = model.fit(x=ds,
+                  epochs=tplan.epochs,
+                  steps_per_epoch=tplan.steps_per_epoch,
+                  callbacks=callbacks)
+  print('# after fit')
 
 
 if __name__ == '__main__':

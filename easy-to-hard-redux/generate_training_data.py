@@ -11,10 +11,8 @@ import time
 import chess
 
 FEATURES = {
-  'board': tf.io.FixedLenFeature((1280,), tf.float32),
-  'best_move': tf.io.FixedLenFeature([], tf.int64),
-  'rating': tf.io.FixedLenFeature([], tf.int64),
-  'uci': tf.io.FixedLenFeature([], tf.string),
+  'puzzle': tf.io.FixedLenFeature((12 * 8 * 8,), tf.float32),
+  'solution': tf.io.FixedLenFeature((64,), tf.float32),
 }
 
 # from easy-to-hard-data/make_chess.py
@@ -46,6 +44,7 @@ def get_board_tensor(board_str, black_moves):
     board_tensor[p_i] = (new_board == p_to_int[p])
 
   return board_tensor
+
 
 def get_moves_tensor(move):
   file_to_num = {"a": 0, "b": 1, "c": 2, "d": 3, "e": 4, "f": 5, "g": 6, "h": 7}
@@ -79,8 +78,8 @@ def _bytes_feature(value):
 
 def _extract(blob):
   t = tf.io.parse_example(blob, features=FEATURES)
-  return ((t['board'], t['rating'], t['uci']),
-          t['best_move'])
+  return ((t['puzzle'],),
+          t['solution'])
 
 
 
@@ -106,15 +105,12 @@ def main(argv):
   os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
   warnings.filterwarnings('ignore', category=Warning)
 
-  if False:
-    ds = tf.data.TFRecordDataset(['easy.rio'], 'ZLIB', num_parallel_reads=1)
+  if True:
+    ds = tf.data.TFRecordDataset(['easy-v3.rio'], 'ZLIB', num_parallel_reads=1)
     ds = ds.map(_extract)
-    ds = ds.batch(2)
+    ds = ds.batch(1)
     for ent in ds:
-      print('b', ent[0][0])
-      print('r', ent[0][1].numpy())
-      print('uci', ent[0][2])
-      print('action', ent[1].numpy())
+      print(ent)
       break
     sys.exit(0)
 
