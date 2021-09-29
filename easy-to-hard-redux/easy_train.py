@@ -204,6 +204,8 @@ def main(argv):
                   steps_per_epoch=tplan.steps_per_epoch,
                   callbacks=callbacks)
   print('# after fit')
+  foo = m.evaluate(x=ds, return_dict=True, steps=1)
+  print('foo: ', foo)
 
 
 if __name__ == '__main__':
