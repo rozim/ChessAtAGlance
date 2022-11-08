@@ -11,7 +11,8 @@ CNN_SHAPE = (12, 64)
 CNN_SHAPE_2D = (12, 8, 8)
 CNN_FLAT_SHAPE = 12 * 64
 
-TRANSFORMER_SHAPE = (64 + 1 + 4)
+TRANSFORMER_SIZE = (64 + 1 + 4)
+TRANSFORMER_VOCABULARY = (1 + 12)
 
 # P2I {
 #   PAWN: 0,
@@ -54,7 +55,7 @@ TRANSFORMER_CO_P2I = [
     QUEEN: 11,
     KING: 12}
 ]
-TRANSFORMER_VOCABULARY = (1 + 12)
+
 
 # I2P = {
 #   0: PAWN,
@@ -94,12 +95,12 @@ def encode_cnn_board(board):
   return ar
 
 def encode_transformer_board(board):
-  ar = np.zeros(TRANSFORMER_SHAPE)
+  ar = np.zeros(TRANSFORMER_SIZE)
   for piece in [PAWN, KNIGHT, BISHOP, ROOK, QUEEN, KING]:
     for color in [WHITE, BLACK]:
       for sq in board.pieces(piece, color):
         assert ar[sq] == 0.0
-        print('set', sq, TRANSFORMER_CO_P2I[color][piece])
+        # print('set', sq, TRANSFORMER_CO_P2I[color][piece])
         ar[sq] = TRANSFORMER_CO_P2I[color][piece]
 
   ar[64] = 1.0 if board.turn else 0.0
