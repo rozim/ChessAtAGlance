@@ -32,19 +32,17 @@ def create_transformer_model(num_heads=4,
                               intermediate_dim=64,
                               num_layers=2):
 
-  board = Input(name='board', shape=(TRANSFORMER_SIZE,), dtype=tf.int32)
-  inputs=[board]
+  inp = Input(name='board', shape=(TRANSFORMER_SIZE,), dtype=tf.int32)
 
-  tap = TokenAndPositionEmbedding(
+  pos = TokenAndPositionEmbedding(
     vocabulary_size=TRANSFORMER_VOCABULARY,
     sequence_length=TRANSFORMER_SIZE,
     embedding_dim=key_dim)
 
-  y = tap(board)
-  for i in range(num_layers):
-    te = TransformerEncoder(intermediate_dim=intermediate_dim, num_heads=num_heads, name=f'transformer_{i}')
-    y = te(y)
-  return Model(inputs=inputs, outputs=[y])
+  y = pos(inp)
+  te = TransformerEncoder(intermediate_dim=intermediate_dim, num_heads=num_heads)
+  y = te(y)
+  return Model(inp, y)
 
 
 def main(argv):
@@ -61,6 +59,8 @@ def main(argv):
   #   print(lay)
 
   enc = encode_transformer_board(board)
+  enc = np.reshape(enc, (1,TRANSFORMER_SIZE))
+
   print('enc=', enc.shape)
   res = m( [{'board': enc}])
   print(res)
