@@ -18,20 +18,20 @@ import tensorflow as tf
 import tensorflow.keras
 import tensorflow.keras.layers
 
-from tensorflow.keras import Model, Input, Sequential
-from tensorflow.keras.layers import Flatten, Reshape, Input, Dense, Reshape, Activation
-from tensorflow.keras.layers import Permute, Conv2D, LayerNormalization, Conv2DTranspose
-from tensorflow.keras.layers import Add, Multiply, Embedding
-# from tensorflow.keras.layers import MultiHeadAttention
+from tensorflow.keras import Model, Input
+from tensorflow.keras.layers import LayerNormalization, Dense
+from tensorflow.keras.layers import Flatten
 
 from keras_nlp_hack import TokenAndPositionEmbedding, TransformerEncoder
 
 
 def create_transformer_model(num_heads=4,
-                              key_dim=32,
-                              intermediate_dim=64,
-                              num_layers=2):
+                             key_dim=32,
+                             intermediate_dim=64,
+                             num_layers=2,
+                             activation='relu'):
 
+  ln = functools.partial(LayerNormalization, epsilon=1e-5)
   inp = Input(name='board', shape=(TRANSFORMER_SIZE,), dtype=tf.int32)
 
   pos = TokenAndPositionEmbedding(
@@ -40,8 +40,15 @@ def create_transformer_model(num_heads=4,
     embedding_dim=key_dim)
 
   y = pos(inp)
-  te = TransformerEncoder(intermediate_dim=intermediate_dim, num_heads=num_heads)
-  y = te(y)
+
+  for i in range(num_layers):
+    te = TransformerEncoder(intermediate_dim=intermediate_dim, num_heads=num_heads, name=f'transformer_{i}')
+    y = te(y)
+
+  y = Flatten()(y)
+  y = Dense(TRANSFORMER_VOCABULARY, use_bias=False, activation=None, name='logits')(y)
+  # y = ln()(y)
+
   return Model(inp, y)
 
 
@@ -50,13 +57,8 @@ def main(argv):
   board = chess.Board(fen)
 
   print()
-  m = create_transformer_model(num_layers=1)
+  m = create_transformer_model(num_layers=4)
   m.summary(expand_nested=True)
-
-  # print()
-  # print('layes:')
-  # for lay in m.layers:
-  #   print(lay)
 
   enc = encode_transformer_board(board)
   enc = np.reshape(enc, (1,TRANSFORMER_SIZE))
