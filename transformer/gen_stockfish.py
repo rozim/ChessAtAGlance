@@ -1,27 +1,37 @@
+# Generate training data with stockfish.
+# Start off in common ECO positions.
+#
+# Usually make the best move but sometimes make
+# a random move.
+#
+# Limit the max ply so that random moves by the stonger
+# side don't prolong games forever.
+#
+
 import chess
-import chess.pgn
 import chess.engine
 import sys, os
 import random
 import time
+from random import random, choice
 
 from absl import app
 from absl import flags
 from absl import logging
-from random import random, choice
+
 
 FLAGS = flags.FLAGS
-flags.DEFINE_integer('n', 10, 'number')
-flags.DEFINE_integer('d', 1, 'search depth')
+flags.DEFINE_integer('goal', 10, '')
+flags.DEFINE_integer('depth', 1, 'search depth')
+flags.DEFINE_integer('max_game_ply', 100, '')
 
-STOCKFISH = '/opt/homebrew/bin/stockfish'
+STOCKFISH = './stockfish'
+HASH = 512
+THREADS =1
+PCT_RANDOM = 0.25
 
-# Score threshold, pawn=100
-THRESHOLD = 25
+max_game = 0
 
-# Assume after this many moves that there is something strange
-# about the position having too many near-optimal moves.
-MAX_THRESHOLD_GEN = 5
 
 def parse_eco_fen():
   for what in ['a', 'b', 'c', 'd', 'e']:
@@ -34,127 +44,91 @@ def parse_eco_fen():
         yield line.split('\t')[2]
 
 
-def play1(engine, fen, limit, pct_random, pct_example):
-  board = chess.Board(fen)
+def read_eco():
+  ecos = list(parse_eco_fen())
+  ecos.append('rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1')
+  return ecos
 
-  last_random = False # avoid 2 in a row
+
+
+def play2(engine, starting_fen, pct_random):
+  board = chess.Board(starting_fen)
   ply = -1
   while board.outcome() is None:
     ply += 1
-    if not last_random and random() < pct_random:
-      move = choice(list(board.legal_moves))
-      last_random = True
+    if ply >= FLAGS.max_game_ply:
+      global max_game
+      max_game += 1
+      return
+
+    # Make every move, even complete garbage, and analyze, so that
+    # the ML model learns to make obvious moves/recaptures etc.
+    for move in board.legal_moves:
       board.push(move)
-      continue
+      if board.outcome() is None:
+        res = engine.analyse(board, chess.engine.Limit(depth=FLAGS.depth))
+        yield simplify_fen(board), res['pv'][0], simplify_score2(res['score'])[-1]
+      board.pop()
 
-    legal_moves = set(board.legal_moves)
-    res1 = engine.play(board, limit, info=chess.engine.INFO_SCORE)
-
-    score1 = res1.info['score'].relative.score()
-    move1 = res1.move
-    assert move1 in legal_moves
-
-    if not last_random and random() >= pct_example:
-      board.push(move1)
-      continue
-
-    yield ply, board.fen(), move1, score1
-    last_random = False
-
-    legal_moves.remove(move1)
-    yes = 0
-    while len(legal_moves) > 0 and yes < MAX_THRESHOLD_GEN:
-      res2 = engine.play(board, limit, info=chess.engine.INFO_SCORE, root_moves=legal_moves)
-      score2 = res2.info['score'].relative.score()
-      move2 = res2.move
-      assert move1 != move2
-      assert move2 in legal_moves
-      try:
-        m1 = res1.info['score'].is_mate()
-        m2 = res2.info['score'].is_mate()
-        if m1 and m2:
-          delta = 0
-        elif m1 or m2:
-          break
-        else:
-          delta = abs(score1 - score2)
-      except TypeError:
-        print('bug', move1, score1, move2, score2, legal_moves)
-        print(board.fen())
-        print(res1.info['score'].is_mate())
-        help(score1)
-        engine.quit()
-        sys.exit(0)
-      if delta > THRESHOLD:
-        break
-      yes += 1
-
-      yield ply, board.fen(), move2, score2
-      legal_moves.remove(move2)
-    #print('*', yes)
-    board.push(move1)
-
-
-
-# play2 to generate scores
-def play2(engine, fen, depths, pct_random):
-  board = chess.Board(fen)
-
-  ply = -1
-  while board.outcome() is None:
-    ply += 1
     if random() < pct_random:
       # To add variety, sometimes just move randomly and
       # don't analyze.
       move = choice(list(board.legal_moves))
-      board.push(move)
-    else:
-      scores = []
-      for depth in depths:
-        res = engine.play(board, depth, info=chess.engine.INFO_SCORE)
+    else: # Play best
+      engine.configure({"Clear Hash": None})
+      res = engine.analyse(board, chess.engine.Limit(depth=FLAGS.depth))
+      move = res['pv'][0]
+    board.push(move)
 
-        score = res.info['score']
-        if score.is_mate():
-          iscore = 9999
-        else:
-          iscore = score.relative.score()
-        scores.append(iscore)
 
-      yield ply, board.fen(), scores
-      board.push(res.move) # use last one
+def simplify_fen(board):
+  #rn2kbnr/ppq2pp1/4p3/2pp2Bp/2P4P/1Q6/P2NNPP1/3RK2R w Kkq - 2 13
+  return ' '.join(board.fen().split(' ')[0:4])
+
+
+def simplify_score2(score):
+  mx = 10000
+  lim = 9000
+  res = int(score.pov(chess.WHITE).score(mate_score=10000))
+  if score.is_mate(): # normal, mate
+    assert res > lim or res < -lim, 'mate in 1000 considered unlikely'
+    return True, res
+  elif res > lim: # clamp
+    return False, lim
+  elif res < -lim: # clamp
+    return False, -lim
+  else: # normal, in range
+    return False, res
 
 
 def main(argv):
-  ecos = list(parse_eco_fen())
-  ecos.append('rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1')
+  ecos = read_eco()
 
   engine = chess.engine.SimpleEngine.popen_uci(STOCKFISH)
+  engine.configure({"Hash": HASH})
+  engine.configure({"Threads": THREADS})
 
-  nf = 0
   all_fens = set()
   dups = 0
-  depths = [chess.engine.Limit(depth=d) for d in range(10)]
-  while nf < FLAGS.n:
-    for ply, fen, scores in play2(engine, choice(ecos), depths, pct_random=0.25):
-      ar = fen.split(' ')
-      sfen = ar[0] + ' ' + ar[1] + ' ' + ar[2]
-      #print('sfen: ', sfen)
-      if sfen in all_fens:
-        #print('DUP')
+  games = 0
+  go_on = True
+
+  while go_on:
+    games += 1
+    for fen, move, score in play2(engine, choice(ecos), pct_random=PCT_RANDOM):
+      if fen in all_fens:
         dups += 1
         continue
-      all_fens.add(sfen)
-      #print(f'{fen},{move}')
-      pp = ','.join([f'{score}' for score in scores])
-      print(f'{fen},{pp}')
-      nf += 1
-      if nf >= FLAGS.n:
+      all_fens.add(fen)
+      print(fen, move, score)
+      if len(all_fens) >= FLAGS.goal:
+        go_on = False
         break
 
   engine.quit()
 
-  print('fens: ', len(all_fens), dups)
-  #print('table: ', all_fens)
+  global max_game
+  print('fens: ', len(all_fens), 'dups', dups, 'games', games, 'max games', max_game)
 
 
 if __name__ == '__main__':
