@@ -52,3 +52,5 @@ models/
 tf_utils/
 tensorflow_addons/
 tf_utils_callbacks/
+*.rio
+\#*\#
