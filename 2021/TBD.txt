@@ -1,0 +1,42 @@
+data:
+
+lr:
+
+model:
+- review batch norm, bias
+- skip connections in dense
+- squeeze/excite connections
+https://towardsdatascience.com/squeeze-and-excitation-networks-9ef5e71eacd7
+https://github.com/RayXie29/SENet_Keras/blob/master/SENet.py
+-- try he_normal because of https://github.com/RayXie29/SENet_Keras/blob/master/SENet.py
+
+- 1x1 flatten should be configurable -- here there are 2 filters, then no dense
+  https://medium.com/applied-data-science/alphago-zero-explained-in-one-diagram-365f5abf67e0
+
+- self-attention
+
+train:
+- AdamW: https://www.tensorflow.org/addons/api_docs/python/tfa/optimizers/AdamW
+- much longer training
+- eval slices
+- float16 performance
+
+            tf.keras.mixed_precision.experimental.set_policy('mixed_float16')
+	    https://www.tensorflow.org/api_docs/python/tf/keras/mixed_precision/Policy
+	    https://www.tensorflow.org/guide/mixed_precision
+	    maybe also LossScaleOptimizer
+
+eval:
+- each test file is separate run, or somehow allow mutiple per-file test runs
+- weigh by #legal moves
+-- model.evaluate(sample_weight=)
+-- x=(inputs, targets, sample_weights) -- dataset in fit()
+
+review:
+- https://github.com/CSSLab/maia-chess/blob/master/blunder_prediction/maia_chess_backend/maia/tfprocess.py
+
+gen:
+- Use TFRecordWriter in c++
+-- https://stackoverflow.com/questions/65288044/generating-tfrecord-format-data-from-c
+-- https://github.com/initzhang/TFRecord-Parser
+-- ugh, how hard is to write our own - CRC issue?

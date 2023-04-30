@@ -1,0 +1,36 @@
+
+[data]
+train    = 'mega-v2-0.snappy'
+validate = 'mega-v2-1.snappy'
+test     = 'mega-v2-2.snappy'
+
+shuffle = 10240
+batch = 1024
+prefetch = 8
+
+[model]
+l2 = 0.0
+activation = 'relu'
+dropout = 0.0
+
+top_tower = [1024]
+
+num_filters = 64
+num_resnet_cnn = 16
+do_flatten1x1 = true
+
+bn_momentum = 0.99
+
+[train]
+optimizer = 'Adam'
+epochs = 200
+
+steps_per_epoch = 100
+validation_steps = 25
+test_steps = 256
+
+lr_schedule = 'warm_linear'
+lr = 0.01
+warmup = 10
+
+

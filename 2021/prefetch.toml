@@ -1,0 +1,37 @@
+
+[data]
+train    = ['stockfish-v5-d3-9.recordio']
+validate = ['stockfish-v5-d3-8.recordio']
+test     = ['stockfish-v5-d3-7.recordio']
+shuffle = 10240
+batch = 1024
+prefetch = 0
+prefetch_to_device = false
+prefetch_to_device_buffer = 2
+swap_batch_map_order = false
+
+[model]
+l2 = 0.0
+activation = 'relu'
+dropout = 0.0
+
+top_tower = [1024]
+
+num_filters = 4
+num_cnn = 4
+
+bn_momentum = 0.99
+do_flatten1x1 = true
+
+[train]
+optimizer = 'Adam'
+epochs = 25
+
+steps_per_epoch = 250
+validation_steps = 10
+test_steps = 10
+
+lr_schedule = 'cosine'
+lr = 0.01
+first_decay_steps = 10 # compare w/ epochs
+alpha = 0.10

@@ -1,0 +1,9 @@
+
+[data]
+train    = [
+	 'mega-v5-0.recordio',
+	 ]
+
+shuffle = 10240
+batch = 1024
+prefetch = 2
