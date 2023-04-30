@@ -1,0 +1,42 @@
+2021-09-27
+==========
+
+Easy to Hard paper terms
+width:		channels / planes=width*64	(train width=8)
+depth: (train depth=84)
+iterations:	number of times to call recur_block -- (depth-4/4 aka 20)
+  recur_block: Seq(*layers), layers=2 make_layer
+layer:
+
+BasicBlock: basic Resnet skip connection unit (2 CNNs, 1 add, 2 ReLU's)
+
+_make_layer(block=block, planes=int(width * 64), num_blocks=num_blocks[i], stride=1))
+                                                           ^^^^^^^^^^^^^
+							   2
+    strides = [stride] + [1]*(num_blocks-1)
+                 1                 2
+            = 1
+
+    return RecurChessNet(block=BasicBlock, num_blocks=[2], width=width, depth=depth)
+                                           ^^^^^^^^^^^^^^
+					   na essentially
+
+
+
+-----
+prediction head
+        self.conv2 = nn.Conv2d(int(width*64), 32, kernel_size=3, stride=1, padding=1, bias=False)
+	                       512
+        self.conv3 = nn.Conv2d(32,             8, kernel_size=3, stride=1, padding=1, bias=False)
+        self.conv4 = nn.Conv2d(8,              2, kernel_size=3, stride=1, padding=1, bias=False)
+
+-----
+    RecurChessNet(BasicBlock, blocks=[2], width=8, depth=84)
+	iters     = 20
+	in_planes = 512
+	conv1 = Conv2d(12, 512)
+
+	self._make_layer(block=block, planes=int(width * 64), num_blocks=num_blocks[i], stride=1))
+		layers.append(block(in_planes=self.in_planes, planes=planes, strd))
+			conv1 = Conv2d(..., 512)
+			conv2 = Conv2d(512, 512)
