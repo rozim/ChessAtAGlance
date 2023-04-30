@@ -2,6 +2,7 @@ from contextlib import redirect_stdout
 import os
 import os.path
 import sys
+import time
 
 from absl import app
 from absl import flags
@@ -33,8 +34,28 @@ def df_to_csv(df, fn, float_format='%6.4f'):
 
 
 class LogLrCallback(Callback):
+  def on_epoch_begin(self, epoch, logs):
+    self.start_epoch = time.time()
+    self.tot_train = 0.0
+    self.tot_test = 0.0
+
   def on_epoch_end(self, epoch, logs):
     tf.summary.scalar('learning_rate', self.model.optimizer.lr, epoch)
+    tf.summary.scalar('time/train', self.tot_train, epoch)
+    tf.summary.scalar('time/test', self.tot_test, epoch)
+    tf.summary.scalar('time/epoch', time.time() - self.start_epoch, epoch)
+
+  def on_train_batch_begin(self, batch, logs=None):
+    self.t_train = time.time()
+
+  def on_train_batch_end(self, batch, logs=None):
+    self.tot_train += time.time() - self.t_train
+
+  def on_test_batch_begin(self, batch, logs=None):
+    self.t_test = time.time()
+
+  def on_test_batch_end(self, batch, logs=None):
+    self.tot_test += time.time() - self.t_test
 
 
 def create_log_dir(plan_fn):
@@ -77,12 +98,11 @@ def main(argv):
   callbacks.append(
     TensorBoard(
       log_dir=log_dir,
-      histogram_freq=0,
+      histogram_freq=10,
       write_graph=False,
       write_images=False,
       write_steps_per_second=True,
       update_freq=1))
-
 
   callbacks.append(create_warm_linear_schedule(tplan))
 
