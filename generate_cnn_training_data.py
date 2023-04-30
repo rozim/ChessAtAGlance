@@ -42,6 +42,11 @@ flags.DEFINE_integer('shards', 1, 'Number of shards')
 # flags.mark_flag_as_required('pgn')
 # flags.mark_flag_as_required('out')
 
+def shuffled(ar):
+  random.shuffle(ar)
+  return ar
+
+
 def main(argv):
   assert FLAGS.pgn
   assert FLAGS.out
@@ -61,8 +66,9 @@ def main(argv):
   already = set()
   n_game, n_move, n_gen, n_dup = 0, 0, 0, 0
   mod = 1
-  for pgn_fn in sorted(glob.glob(FLAGS.pgn)):
-    print('Open: ', pgn_fn)
+  files = shuffled(glob.glob(FLAGS.pgn))
+  for fnum, pgn_fn in enumerate(files):
+    print(f'Open: {fnum}/{len(files)}: {pgn_fn}')
     for i, game in enumerate(gen_games(pgn_fn)):
       n_game += 1
       if n_game % mod == 0:
@@ -81,6 +87,10 @@ def main(argv):
           continue
         already.add(key)
         n_gen += 1
+        if n_gen > 25000000:
+          # Else we use up all RAM.
+          print('RESET')
+          already = set()
 
         enc_board, enc_move = encode_cnn_board_move_wtm(board, move)
         feature = {
