@@ -16,11 +16,15 @@ from chess import PAWN, KNIGHT, BISHOP, ROOK, QUEEN, KING
 from absl import app
 from absl import flags
 
+import tensorflow as tf
+
 from encode_move import MOVE_TO_INDEX
 
+NUM_CLASSES = len(MOVE_TO_INDEX)
+
 CNN_PLANES = (12 + 4) # 12 pieces, 4 castle
-CNN_SHAPE = (CNN_PLANES, 64)
-CNN_SHAPE_2D = (CNN_PLANES, 8, 8)
+CNN_SHAPE_2D = (CNN_PLANES, 64)
+CNN_SHAPE_3D = (CNN_PLANES, 8, 8)
 CNN_FLAT_SHAPE = CNN_PLANES * 64
 CNN_ONES_PLANE = np.ones(64)
 
@@ -81,7 +85,10 @@ CO_I2P = {
 }
 
 
-
+CNN_FEATURES = {
+  'board': tf.io.FixedLenFeature(CNN_SHAPE_3D, tf.float32),
+  'label': tf.io.FixedLenFeature([], tf.int64)
+}
 
 def encode_cnn_board_move_wtm(board, move):
   if board.turn == BLACK:
@@ -97,7 +104,7 @@ def encode_cnn_board_wtm(board):
   """
   if board.turn == BLACK:
     board = board.mirror()
-  ar = np.zeros(CNN_SHAPE)
+  ar = np.zeros(CNN_SHAPE_2D)
   for piece in [PAWN, KNIGHT, BISHOP, ROOK, QUEEN, KING]:
     for color in [WHITE, BLACK]:
       for sq in board.pieces(piece, color):
