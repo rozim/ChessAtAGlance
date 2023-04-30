@@ -4,7 +4,7 @@
 # Usually make the best move but sometimes make
 # a random move.
 #
-# Limit the max ply so that random moves by the stonger
+# Limit the max ply so that random moves by the stronger
 # side don't prolong games forever.
 #
 

@@ -1,4 +1,0 @@
-
-[data]
-train    = ['mega-v3-0.recordio']
-shuffle

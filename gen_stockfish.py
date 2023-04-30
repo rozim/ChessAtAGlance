@@ -1,5 +1,4 @@
 import chess
-import chess.pgn
 import chess.engine
 import sys, os
 import random
@@ -14,14 +13,13 @@ FLAGS = flags.FLAGS
 flags.DEFINE_integer('n', 10, 'number')
 flags.DEFINE_integer('d', 1, 'search depth')
 
-
 STOCKFISH = '/opt/homebrew/bin/stockfish'
 
 # Score threshold, pawn=100
 THRESHOLD = 25
 
 # Assume after this many moves that there is something strange
-# about the position having to many near-optimal moves.
+# about the position having too many near-optimal moves.
 MAX_THRESHOLD_GEN = 5
 
 def parse_eco_fen():
@@ -97,6 +95,33 @@ def play1(engine, fen, limit, pct_random, pct_example):
 
 
 
+# play2 to generate scores
+def play2(engine, fen, depths, pct_random):
+  board = chess.Board(fen)
+
+  ply = -1
+  while board.outcome() is None:
+    ply += 1
+    if random() < pct_random:
+      # To add variety, sometimes just move randomly and
+      # don't analyze.
+      move = choice(list(board.legal_moves))
+      board.push(move)
+    else:
+      scores = []
+      for depth in depths:
+        res = engine.play(board, depth, info=chess.engine.INFO_SCORE)
+
+        score = res.info['score']
+        if score.is_mate():
+          iscore = 9999
+        else:
+          iscore = score.relative.score()
+        scores.append(iscore)
+
+      yield ply, board.fen(), scores
+      board.push(res.move) # use last one
+
 
 def main(argv):
   ecos = list(parse_eco_fen())
@@ -106,23 +131,29 @@ def main(argv):
 
   nf = 0
   all_fens = set()
+  dups = 0
+  depths = [chess.engine.Limit(depth=d) for d in range(10)]
   while nf < FLAGS.n:
-    for ply, fen, move, score in play1(engine,
-                                       choice(ecos),
-                                       chess.engine.Limit(depth=FLAGS.d),
-                                       pct_random=0.25,
-                                       pct_example=0.25):
-      sfen = fen + ' ' + str(move)
+    for ply, fen, scores in play2(engine, choice(ecos), depths, pct_random=0.25):
+      ar = fen.split(' ')
+      sfen = ar[0] + ' ' + ar[1] + ' ' + ar[2]
+      #print('sfen: ', sfen)
       if sfen in all_fens:
+        #print('DUP')
+        dups += 1
         continue
       all_fens.add(sfen)
       #print(f'{fen},{move}')
-      print(f'{fen},{move},{score}')
+      pp = ','.join([f'{score}' for score in scores])
+      print(f'{fen},{pp}')
       nf += 1
       if nf >= FLAGS.n:
         break
 
   engine.quit()
+
+  print('fens: ', len(all_fens), dups)
+  #print('table: ', all_fens)
 
 
 if __name__ == '__main__':

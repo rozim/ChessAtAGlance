@@ -1,8 +1,11 @@
 [model]
 l2 = 0.0
 num_filters = 32
-num_resnet_blocks = 4
-top_tower = [256, 256, 256]
+num_layers = 4
 
 [train]
 lr = 0.01
+momentum = 0.9
+batch_size = 1
+epochs = 10
+steps_per_epoch = 1

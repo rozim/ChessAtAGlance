@@ -1,6 +1,0 @@
-data:
-- prefetch_to_device
-- tf.data.experimental.copy_to_device
-
-train:
-- mask legal moves

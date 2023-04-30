@@ -199,13 +199,21 @@ def main(argv):
                LogLrCallback()]
 
   print('# before fit')
+
+
   history = model.fit(x=ds,
                   epochs=tplan.epochs,
                   steps_per_epoch=tplan.steps_per_epoch,
                   callbacks=callbacks)
   print('# after fit')
-  foo = m.evaluate(x=ds, return_dict=True, steps=1)
+
+  ds = get_data(tplan)
+  foo = model.evaluate(x=ds, return_dict=True, steps=1)
   print('foo: ', foo)
+  res = model.predict(x=ds,
+                      batch_size=7,
+                      steps=3)
+  print('res: ', res.shape, res)
 
 
 if __name__ == '__main__':
