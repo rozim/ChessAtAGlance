@@ -14,9 +14,10 @@
 #
 #
 #
-import os, sys, io
+import os, sys
 import random
 import time
+import glob
 
 from absl import app
 from absl import flags
@@ -52,32 +53,35 @@ def main(argv):
   n_game, n_move, n_gen, n_dup = 0, 0, 0, 0
   mod = 1
   with tf.io.TFRecordWriter(FLAGS.out, opts) as rio:
-    for i, game in enumerate(gen_games(FLAGS.pgn)):
-      n_game += 1
-      if n_game % mod == 0:
-        print(n_game, n_move, n_gen, n_dup)
-        mod *= 2
+    for pgn_fn in sorted(glob.glob(FLAGS.pgn)):
+      print('Open: ', pgn_fn)
+      for i, game in enumerate(gen_games(pgn_fn)):
+        n_game += 1
+        if n_game % mod == 0:
+          print(n_game, n_move, n_gen, n_dup)
+          mod *= 2
+          mod = min(mod, 1024)
 
-      for ply, (move, board) in enumerate(gen_moves(game)):
-        n_move += 1
-        #print(i, ply, move)
-        fen = simplify_fen(board)
-        uci = move.uci()
-        key = hash(fen + uci)
-        if key in already:
-          n_dup += 1
-          continue
-        already.add(key)
-        n_gen += 1
+        for ply, (move, board) in enumerate(gen_moves(game)):
+          n_move += 1
+          #print(i, ply, move)
+          fen = simplify_fen(board)
+          uci = move.uci()
+          key = hash(fen + uci)
+          if key in already:
+            n_dup += 1
+            continue
+          already.add(key)
+          n_gen += 1
 
-        enc_board, enc_move = encode_cnn_board_move_wtm(board, move)
-        feature = {
-          'board': floats_feature(enc_board.flatten()),
-          'label': int64_feature(enc_move),
-          'fen':  bytes_feature(fen.encode('utf-8')),
-        }
-        pb = tf.train.Example(features=tf.train.Features(feature=feature))
-        rio.write(pb.SerializeToString())
+          enc_board, enc_move = encode_cnn_board_move_wtm(board, move)
+          feature = {
+            'board': floats_feature(enc_board.flatten()),
+            'label': int64_feature(enc_move),
+            'fen':  bytes_feature(fen.encode('utf-8')),
+          }
+          pb = tf.train.Example(features=tf.train.Features(feature=feature))
+          rio.write(pb.SerializeToString())
   print('n_game: ', n_game)
   print('n_move: ', n_move)
   print('n_dup: ', n_dup)
