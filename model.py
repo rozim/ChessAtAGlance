@@ -77,22 +77,24 @@ def create_model(mplan):
   #     0   1     2  3
   x = Permute([2, 3, 1])(x)
 
-  # Get to right size so skip can work
-  x = my_conv2d()(x)
-  x = my_ln()(x)
-  x = my_act()(x)
-
-  for _ in range(mplan.num_layers):
-    skip = x
-
+  # If not set then assume we are skipping everything.
+  if mplan.num_filters:
+    # Get to right size so skip can work
     x = my_conv2d()(x)
     x = my_ln()(x)
     x = my_act()(x)
 
-    x = my_conv2d()(x)
-    x = my_ln()(x)
-    x = Add()([x, skip])
-    x = my_act()(x)
+    for _ in range(mplan.num_layers):
+      skip = x
+
+      x = my_conv2d()(x)
+      x = my_ln()(x)
+      x = my_act()(x)
+
+      x = my_conv2d()(x)
+      x = my_ln()(x)
+      x = Add()([x, skip])
+      x = my_act()(x)
 
   x = Flatten()(x)
   y = Dense(NUM_CLASSES, name='logits', activation=None, use_bias=False)(x)
