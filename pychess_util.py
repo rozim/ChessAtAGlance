@@ -12,8 +12,8 @@ def gen_games(fn):
 def gen_moves(game):
   board = game.board()
   for move in game.mainline_moves():
-    board.push(move)
     yield move, board
+    board.push(move)
 
 
 def simplify_fen(board):
