@@ -92,6 +92,7 @@ CNN_FEATURES = {
 
 def encode_cnn_board_move_wtm(board, move):
   if board.turn == BLACK:
+    # As move was already played.. (confusing)
     move = chess.Move(chess.square_mirror(move.from_square),
                       chess.square_mirror(move.to_square),
                       move.promotion)
