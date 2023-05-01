@@ -77,8 +77,8 @@ def main(argv):
   tplan = plan.train
   dplan = plan.data
 
-  ds_train = create_dataset(['foo3.rio-0000[0-8]-of-00010'], batch=dplan.batch, shuffle=dplan.batch * 10)
-  ds_val = create_dataset(['foo3.rio-00009-of-00010'], batch=dplan.batch, shuffle=None)
+  ds_train = create_dataset(dplan.train, batch=dplan.batch, shuffle=dplan.batch * 10)
+  ds_val = create_dataset(dplan.validate, batch=dplan.batch, shuffle=None)
   model = create_model(plan.model)
 
   callbacks = [TerminateOnNaN(),
