@@ -14,10 +14,10 @@
 #
 #
 #
+import glob
 import os, sys
 import random
 import time
-import glob
 
 from absl import app
 from absl import flags
@@ -39,8 +39,7 @@ FLAGS = flags.FLAGS
 flags.DEFINE_string('pgn', 't1.pgn', 'PGN file')
 flags.DEFINE_string('out', 'foo.rio', 'Recordio file')
 flags.DEFINE_integer('shards', 1, 'Number of shards')
-# flags.mark_flag_as_required('pgn')
-# flags.mark_flag_as_required('out')
+
 
 def shuffled(ar):
   random.shuffle(ar)
@@ -52,6 +51,7 @@ def main(argv):
   assert FLAGS.out
   assert FLAGS.shards > 0
 
+  t_start = time.time()
   opts = tf.io.TFRecordOptions(
     compression_type='ZLIB',
     output_buffer_size=(4 * 1024 * 1024))
@@ -68,7 +68,8 @@ def main(argv):
   mod = 1
   files = shuffled(glob.glob(FLAGS.pgn))
   for fnum, pgn_fn in enumerate(files):
-    print(f'Open: {fnum}/{len(files)}: {pgn_fn}')
+    elapsed = time.time() - t_start
+    print(f'Open: {fnum}/{len(files)}: {pgn_fn} : {elapsed:.1f} : {elapsed / (fnum + 1):.1f}')
     for i, game in enumerate(gen_games(pgn_fn)):
       n_game += 1
       if n_game % mod == 0:
