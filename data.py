@@ -1,4 +1,6 @@
 import glob
+import os.path
+
 import tensorflow as tf
 from absl import app
 from encode import CNN_FEATURES, NUM_CLASSES, CNN_SHAPE_3D
@@ -10,8 +12,17 @@ def extract(blob):
   return t['board'], t['label']
 
 
-def create_dataset(pat, batch=16, shuffle=None, repeat=True):
-  fns = tf.data.Dataset.list_files(pat)
+def create_dataset(pats, batch=16, shuffle=None, repeat=True):
+  nf = 0
+
+  for pat in pats:
+    for fn in glob.glob(pat):
+      nf += 1
+      assert os.path.isfile(fn), fn
+  if nf == 0:
+    assert False, 'no files ' + pat
+
+  fns = tf.data.Dataset.list_files(pats)
   ds = tf.data.TFRecordDataset(fns, 'ZLIB', num_parallel_reads=len(fns))
   if repeat:
     ds = ds.repeat()
@@ -24,7 +35,7 @@ def create_dataset(pat, batch=16, shuffle=None, repeat=True):
 
 
 def main(argv):
-  ds = create_dataset(['foo3.rio-0000?-of-00010'], batch=1)
+  ds = create_dataset('f10.rio-00009-of-00010', batch=1)
   for ent in ds.take(1):
     print(ent)
     break
