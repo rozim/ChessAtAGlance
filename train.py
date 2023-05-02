@@ -19,6 +19,8 @@ from tensorflow.python.keras import backend as K
 
 from data import create_dataset
 from model import create_model
+from model import create_bias_only_model
+from model import create_simple_model
 from plan import load_plan
 from lr import create_warm_linear_schedule
 
@@ -76,10 +78,17 @@ def main(argv):
   plan = load_plan(FLAGS.plan)
   tplan = plan.train
   dplan = plan.data
+  mplan = plan.model
 
   ds_train = create_dataset(dplan.train, batch=dplan.batch, shuffle=dplan.batch * 10)
   ds_val = create_dataset(dplan.validate, batch=dplan.batch, shuffle=None)
-  model = create_model(plan.model)
+
+  if mplan.type == 'bias_only':
+    model = create_bias_only_model(mplan)
+  elif mplan.type == 'simple':
+    model = create_simple_model(mplan)
+  else:
+    model = create_model(mplan)
 
   callbacks = [TerminateOnNaN(),
                LogLrCallback()
@@ -105,6 +114,15 @@ def main(argv):
       update_freq=1))
 
   callbacks.append(create_warm_linear_schedule(tplan))
+
+  callbacks.append(
+    tf.keras.callbacks.ModelCheckpoint(
+      filepath=os.path.join(log_dir, 'checkpoint_{epoch:04d}-{val_accuracy:.2f}'),
+      monitor ='val_accuracy',
+      verbose=1,
+      save_weights_only=True,
+      save_best_only=True
+    ))
 
   model.compile(optimizer=Adam(),
                 loss=SparseCategoricalCrossentropy(from_logits=True),
