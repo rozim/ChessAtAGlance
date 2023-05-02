@@ -25,33 +25,58 @@ from tensorflow.keras.losses import SparseCategoricalCrossentropy
 # from tensorflow.keras.optimizers.legacy import AdamW
 from tensorflow.keras.optimizers import Adam
 
-# class Linear(tensorflow.keras.layers.Layer):
-#   def __init__(self, units=32, input_dim=32):
-#     super().__init__()
-#     w_init = tf.random_normal_initializer()
-#     self.w = tf.Variable(
-#       initial_value=w_init(shape=(input_dim, units), dtype="float32"),
-#       trainable=False, # bias only
-#     )
-#     b_init = tf.zeros_initializer()
-#     self.b = tf.Variable(
-#       initial_value=b_init(shape=(units,), dtype="float32"), trainable=True
-#     )
+class BiasOnly(tensorflow.keras.layers.Layer):
+  def __init__(self, units, input_dim):
+    super().__init__()
+    w_init = tf.random_normal_initializer()
+    self.w = tf.Variable(
+      initial_value=w_init(shape=(input_dim, units), dtype="float32"),
+      trainable=False, # bias only
+    )
+    b_init = tf.zeros_initializer()
+    self.b = tf.Variable(
+      initial_value=b_init(shape=(units,), dtype="float32"), trainable=True
+    )
 
-#   def call(self, inputs):
-#     return tf.matmul(inputs, self.w) + self.b
+  def call(self, inputs):
+    return tf.stop_gradient(tf.matmul(inputs, self.w)) + self.b
+    #return tf.matmul(inputs, self.w) + self.b
+
+class Linear(tensorflow.keras.layers.Layer):
+  def __init__(self, units=32, input_dim=32):
+    super().__init__()
+    w_init = tf.random_normal_initializer()
+    self.w = tf.Variable(
+      initial_value=w_init(shape=(input_dim, units), dtype="float32"),
+      trainable=False, # bias only
+    )
+    b_init = tf.zeros_initializer()
+    self.b = tf.Variable(
+      initial_value=b_init(shape=(units,), dtype="float32"), trainable=True
+    )
+
+  def call(self, inputs):
+    return tf.matmul(inputs, self.w) + self.b
 
 
-def create_simple_model():
+def create_bias_only_model(mplan):
   board = Input(shape=CNN_SHAPE_3D, name='board', dtype='float32')
   x = board
-  # in: bs, chan, x, y
-  #         16    8, 8
-  #     0   1     2  3
-  x = Permute([2, 3, 1])(x)
   x = Flatten()(x)
-  x = Dense(10 * NUM_CLASSES, activation='relu')(x)
-  y = Dense(NUM_CLASSES, name='logits', activation=None, use_bias=False)(x)
+  y = BiasOnly(NUM_CLASSES, 1024)(x)
+  return Model(inputs=[board], outputs=y)
+
+
+def create_simple_model(mplan):
+  kernel_regularizer = regularizers.l2(1e-6)
+
+  board = Input(shape=CNN_SHAPE_3D, name='board', dtype='float32')
+  x = board
+  x = Flatten()(x)
+  for _ in range(mplan.num_layers):
+    # Skip LN for now.
+    x = Dense(NUM_CLASSES, activation=mplan.activation, kernel_regularizer=kernel_regularizer)(x)
+  y = Dense(NUM_CLASSES, name='logits', activation=None, use_bias=False, kernel_regularizer=kernel_regularizer)(x)
   return Model(inputs=[board], outputs=y)
 
 
