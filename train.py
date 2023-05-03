@@ -80,14 +80,14 @@ def main(argv):
   dplan = plan.data
   mplan = plan.model
 
-  ds_train = create_dataset(dplan.train, batch=dplan.batch, shuffle=dplan.batch * 10)
+  ds_train = create_dataset(dplan.train, batch=dplan.batch, shuffle=dplan.batch * 25)
   ds_val = create_dataset(dplan.validate, batch=dplan.batch, shuffle=None)
 
   if mplan.type == 'bias_only':
     model = create_bias_only_model(mplan)
   elif mplan.type == 'simple':
     model = create_simple_model(mplan)
-  else:
+  elif mplan.type == 'cnn':
     model = create_model(mplan)
 
   callbacks = [TerminateOnNaN(),
