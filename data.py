@@ -1,5 +1,7 @@
+
 import glob
 import os.path
+import sys
 
 import tensorflow as tf
 from absl import app
@@ -9,7 +11,7 @@ AUTOTUNE = tf.data.AUTOTUNE
 
 def extract(blob):
   t = tf.io.parse_example(blob, features=CNN_FEATURES)
-  return t['board'], t['label']
+  return t['board'], t['label']  # features, label [, weights]
 
 
 def create_dataset(pats, batch=16, shuffle=None, repeat=True):
@@ -22,13 +24,13 @@ def create_dataset(pats, batch=16, shuffle=None, repeat=True):
   if num_files == 0:
     assert False, 'no files ' + pat
 
-  fns = tf.data.Dataset.list_files(pats).shuffle(num_files)
-  ds = tf.data.TFRecordDataset(fns, 'ZLIB', num_parallel_reads=len(fns))
+  fns = tf.data.Dataset.list_files(pats).cache().shuffle(num_files)
+  ds = tf.data.TFRecordDataset(fns, 'ZLIB', num_parallel_reads=num_files)
   if repeat:
     ds = ds.repeat()
   if shuffle:
     ds = ds.shuffle(shuffle)
-  ds = ds.batch(batch,drop_remainder=False)
+  ds = ds.batch(batch, drop_remainder=False)
   ds = ds.map(extract, num_parallel_calls=AUTOTUNE, deterministic=False)
   ds = ds.prefetch(AUTOTUNE)
   return ds
