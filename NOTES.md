@@ -11,13 +11,28 @@ Open: 1247/1248: ../ChessData/Twic/twic1278.pgn : 68694.3 : 55.0
 n_game:  3206053
 n_move:  264199625
 n_dup:  53789318
-n_gen:  210410307
+n_gen:  210410307o
     68791.44 real     62010.54 user       911.88 sys
 ...
 du -shc data/f1000*
 ...
 228M	data/f1000.rio-00099-of-00100
  22G	total
+
+-----
+read 2 shards
+done:  2106435
+done:  2102822
+
+batches @ 1k: 184,930
+epochs: 1849 <-- 1 pass through training data
+
+
+
+records(100%); 210,462,850  <-- based on 2 shards
+n_gen:         210,410,307  <-- checks out
+90%:           189369276    <-- training
+
 
 2023-04-29
 ==========
