@@ -25,6 +25,9 @@ from tensorflow.keras.losses import SparseCategoricalCrossentropy
 # from tensorflow.keras.optimizers.legacy import AdamW
 from tensorflow.keras.optimizers import Adam
 
+DATA_FORMAT = 'channels_last'
+
+
 class BiasOnly(tensorflow.keras.layers.Layer):
   def __init__(self, units, input_dim):
     super().__init__()
@@ -68,32 +71,38 @@ def create_bias_only_model(mplan):
 
 
 def create_simple_model(mplan):
-  kernel_regularizer = regularizers.l2(1e-6)
+  kernel_regularizer = regularizers.l2(mplan.l2)
 
   board = Input(shape=CNN_SHAPE_3D, name='board', dtype='float32')
   x = board
   x = Flatten()(x)
+
   for _ in range(mplan.num_layers):
     # Skip LN for now.
     x = Dense(NUM_CLASSES, activation=mplan.activation, kernel_regularizer=kernel_regularizer)(x)
+
   y = Dense(NUM_CLASSES, name='logits', activation=None, use_bias=False, kernel_regularizer=kernel_regularizer)(x)
   return Model(inputs=[board], outputs=y)
 
 
 def create_model(mplan):
-  data_format = 'channels_last'
-  kernel_regularizer = regularizers.l2(1e-6)
+  if mplan.l2:
+    kernel_regularizer = regularizers.l2(mplan.l2)
+  else:
+    kernel_regularizer = None
+
   my_conv2d = functools.partial(
     Conv2D,
     filters=mplan.num_filters,
     kernel_size=(3, 3),
     kernel_regularizer=kernel_regularizer,
-    data_format=data_format,
+    data_format=DATA_FORMAT,
     padding='same',
     use_bias=False)
   #my_ln = functools.partial(LayerNormalization, epsilon=1e-5)
   my_ln = LayerNormalization
   my_act = functools.partial(Activation, mplan.activation)
+  my_dense = functools.partial(Dense, kernel_regularizer=kernel_regularizer)
 
   board = Input(shape=CNN_SHAPE_3D, name='board', dtype='float32')
   x = board
@@ -122,7 +131,13 @@ def create_model(mplan):
       x = my_act()(x)
 
   x = Flatten()(x)
-  y = Dense(NUM_CLASSES, name='logits', activation=None, use_bias=False)(x)
+
+  for i, w in enumerate(mplan.top_tower):
+    x = my_dense(w, name=f'top_{i}', activation=None)(x)
+    x = my_ln()(x)
+    x = my_act()(x)
+
+  y = my_dense(NUM_CLASSES, name='logits', activation=None, use_bias=False)(x)
   return Model(inputs=[board], outputs=y)
 
 
