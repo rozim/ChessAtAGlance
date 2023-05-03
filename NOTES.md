@@ -1,3 +1,55 @@
+2023-05-03
+==========
+
+keras.initializers.glorot_normal
+keras.initializers.glorot_uniform
+keras.initializers.he_normal
+keras.initializers.he_uniform
+keras.initializers.lecun_normal
+keras.initializers.lecun_uniform
+keras.initializers.orthogonal
+keras.initializers.random_normal
+keras.initializers.random_uniform
+keras.initializers.truncated_normal
+keras.initializers.variance_scaling
+
+3 runs of each initializer with filters=16, layers=4, top_tower=256, epochs=100,
+from worst to best:
+
+0.8479 : he_uniform-out.txt
+0.8489 : he_normal-out.txt
+0.8503 : glorot_uniform-out.txt
+0.8528 : variance_scaling-out.txt
+0.8536 : lecun_normal-out.txt
+0.8558 : lecun_uniform-out.txt
+0.8566 : truncated_normal-out.txt
+0.8567 : glorot_normal-out.txt
+0.8611 : random_uniform-out.txt
+0.8615 : orthogonal-out.txt
+0.8624 : random_normal-out.txt		<-- best
+
+2023-05-02
+==========
+
+
+
+prefetch to device true - with both data sets slower, with just ds_train same speed, so no point
+python train.py --plan=config/cnn_101_benchmark.toml --log_dir=/tmp/foo  418.21s user 233.41s system 466% cpu 2:19.64 total
+
+prefetch to device false
+python train.py --plan=config/cnn_101_benchmark.toml --log_dir=/tmp/foo  132.69s user 69.65s system 192% cpu 1:44.95 total
+
+
+
+--> seems to have no effect
+
+
+2023-05-02
+==========
+
+Simple benchmark is 3x faster on GPU (wallclock)
+but maybe GPU is better again since it uses fewer CPU cores.
+
 2023-05-01
 ==========
 
@@ -23,6 +75,8 @@ du -shc data/f1000*
 read 2 shards
 done:  2106435
 done:  2102822
+
+one shard has ~2000 batches @ 1k
 
 batches @ 1k: 184,930
 epochs: 1849 <-- 1 pass through training data
