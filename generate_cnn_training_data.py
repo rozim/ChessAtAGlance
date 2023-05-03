@@ -88,7 +88,7 @@ def main(argv):
           continue
         already.add(key)
         n_gen += 1
-        if n_gen > 25000000:
+        if len(already) > 25000000:
           # Else we use up all RAM.
           print('RESET')
           already = set()
