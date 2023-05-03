@@ -1,0 +1,21 @@
+[data]
+
+batch = 1024
+
+train     = ['data/f100.rio-0000[0-8]-of-00010']
+validate  = ['data/f100.rio-00009-of-00010']
+
+[model]
+
+activation = 'elu'
+num_filters = 16
+num_layers = 1
+
+[train]
+
+epochs = 1000
+steps_per_epoch = 100
+val_steps = 10
+
+lr = 0.001
+warmup = 10
