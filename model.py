@@ -91,18 +91,23 @@ def create_model(mplan):
   else:
     kernel_regularizer = None
 
+
+  kernel_initializer = mplan.get('kernel', 'glorot_uniform')
+
   my_conv2d = functools.partial(
     Conv2D,
     filters=mplan.num_filters,
     kernel_size=(3, 3),
     kernel_regularizer=kernel_regularizer,
+    kernel_initializer=kernel_initializer,
     data_format=DATA_FORMAT,
     padding='same',
     use_bias=False)
   #my_ln = functools.partial(LayerNormalization, epsilon=1e-5)
   my_ln = LayerNormalization
   my_act = functools.partial(Activation, mplan.activation)
-  my_dense = functools.partial(Dense, kernel_regularizer=kernel_regularizer)
+  my_dense = functools.partial(Dense, kernel_regularizer=kernel_regularizer,
+                               kernel_initializer=kernel_initializer)
 
   board = Input(shape=CNN_SHAPE_3D, name='board', dtype='float32')
   x = board
@@ -136,6 +141,7 @@ def create_model(mplan):
       filters=mplan.num_filters,
       kernel_size=(1, 1),
       kernel_regularizer=kernel_regularizer,
+      kernel_initializer=kernel_initializer,
       data_format=DATA_FORMAT,
       padding='same',
       use_bias=False,

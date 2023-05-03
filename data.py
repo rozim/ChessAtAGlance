@@ -24,8 +24,10 @@ def create_dataset(pats, batch=16, shuffle=None, repeat=True):
   if num_files == 0:
     assert False, 'no files ' + pat
 
-  fns = tf.data.Dataset.list_files(pats).cache().shuffle(num_files)
-  ds = tf.data.TFRecordDataset(fns, 'ZLIB', num_parallel_reads=num_files)
+  # Don't do all else we get repeated batches it seems.
+  fns_shuffle = max(1, num_files // 10)
+  fns = tf.data.Dataset.list_files(pats).cache().shuffle(fns_shuffle)
+  ds = tf.data.TFRecordDataset(fns, 'ZLIB', num_parallel_reads=fns_shuffle)
   if repeat:
     ds = ds.repeat()
   if shuffle:

@@ -1,0 +1,25 @@
+[data]
+
+batch = 1024
+
+train     = ['data/f1000.rio-000[0-9]?-of-00100']
+validate  = ['data/f1000.rio-0009?-of-00100']
+
+[model]
+
+type = 'cnn'
+l2 = 1e-6
+activation = 'elu'
+num_filters = 16
+num_layers = 4
+top_tower = [ 256 ]
+kernel = 'identity'
+
+[train]
+
+epochs = 100
+steps_per_epoch = 25
+val_steps = 25
+
+lr = 0.01
+warmup = 10
