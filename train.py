@@ -24,11 +24,14 @@ from model import create_simple_model
 from plan import load_plan
 from lr import create_warm_linear_schedule
 
+#### not needed - in absl.logging
+####flags.DEFINE_string('log_dir', '/tmp/logs', 'Where to write to')
 flags.DEFINE_string('plan', None, 'toml file')
+flags.DEFINE_boolean('force_cpu', False, '')
+flags.DEFINE_boolean('force_gpu', False, '')
+
 flags.mark_flags_as_required(['plan'])
 FLAGS = flags.FLAGS
-
-LOGDIR = '/tmp/logs'
 
 
 def df_to_csv(df, fn, float_format='%6.4f'):
@@ -66,7 +69,7 @@ def create_log_dir(plan_fn):
   try_n = 0
   while True:
     try_n += 1
-    maybe = os.path.join(LOGDIR, f'{base}_try_{try_n:02d}')
+    maybe = os.path.join(FLAGS.log_dir, f'{base}_try_{try_n:02d}')
     try:
       os.makedirs(maybe)
       return maybe
@@ -79,6 +82,8 @@ def main(argv):
   tplan = plan.train
   dplan = plan.data
   mplan = plan.model
+  if FLAGS.force_cpu:
+    assert not FLAGS.force_gpu
 
   ds_train = create_dataset(dplan.train, batch=dplan.batch, shuffle=dplan.batch * 25)
   ds_val = create_dataset(dplan.validate, batch=dplan.batch, shuffle=None)
@@ -124,17 +129,30 @@ def main(argv):
       save_best_only=True
     ))
 
+
   model.compile(optimizer=Adam(),
                 loss=SparseCategoricalCrossentropy(from_logits=True),
-                metrics=['accuracy',
-                         ])
+                metrics=['accuracy'])
 
-  history = model.fit(x=ds_train,
-                      epochs=tplan.epochs,
-                      steps_per_epoch=tplan.steps_per_epoch,
-                      validation_data=ds_val,
-                      validation_steps=tplan.val_steps,
-                      callbacks=callbacks)
+  def run_train():
+    return model.fit(x=ds_train,
+                     epochs=tplan.epochs,
+                     steps_per_epoch=tplan.steps_per_epoch,
+                     validation_data=ds_val,
+                     validation_steps=tplan.val_steps,
+                     callbacks=callbacks)
+
+  if FLAGS.force_cpu:
+    with tf.device('/cpu:0'):
+      print('In force CPU block')
+      history = run_train()
+  elif FLAGS.force_gpu:
+    with tf.device('/gpu:0'):
+      print('In force GPU block - metal?')
+      history = run_train()
+  else:
+    history = run_train()
+
 
   df = pd.DataFrame(history.history)
   df_to_csv(df, '/dev/stdout')
