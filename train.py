@@ -43,6 +43,8 @@ FLAGS = flags.FLAGS
 
 T_START = time.time()
 
+LOG_DIR = '/tmp/logs'
+
 #####
 
 
@@ -81,7 +83,7 @@ def create_log_dir(plan_fn):
   try_n = 0
   while True:
     try_n += 1
-    maybe = os.path.join(FLAGS.log_dir, f'{base}_try_{try_n:02d}')
+    maybe = os.path.join(LOG_DIR, f'{base}_try_{try_n:02d}')
     try:
       os.makedirs(maybe)
       return maybe
@@ -131,6 +133,7 @@ def main(argv):
   dplan = plan.data
   mplan = plan.model
   log_dir = create_log_dir(FLAGS.plan)
+  print('log_dir: ', log_dir)
 
   fn = os.path.join(log_dir, os.path.basename(FLAGS.plan))
   print(f'Write {fn}')
