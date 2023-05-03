@@ -13,16 +13,16 @@ def extract(blob):
 
 
 def create_dataset(pats, batch=16, shuffle=None, repeat=True):
-  nf = 0
+  num_files = 0
 
   for pat in pats:
     for fn in glob.glob(pat):
-      nf += 1
+      num_files += 1
       assert os.path.isfile(fn), fn
-  if nf == 0:
+  if num_files == 0:
     assert False, 'no files ' + pat
 
-  fns = tf.data.Dataset.list_files(pats)
+  fns = tf.data.Dataset.list_files(pats).shuffle(num_files)
   ds = tf.data.TFRecordDataset(fns, 'ZLIB', num_parallel_reads=len(fns))
   if repeat:
     ds = ds.repeat()
