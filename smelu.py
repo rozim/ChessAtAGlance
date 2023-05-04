@@ -4,8 +4,8 @@ import tensorflow as tf
 # Smooth activations and reproducibility in deep networks
 # https://arxiv.org/abs/2010.09931
 
-from keras.layers import Activation
-from keras.utils.generic_utils import get_custom_objects
+from tensorflow.keras.layers import Activation
+# from tensorflow.keras.utils.generic_utils import get_custom_objects
 
 
 def smelu(x, beta=1.0):
@@ -14,4 +14,4 @@ def smelu(x, beta=1.0):
   y = tf.where((x > -beta) & (x < beta), smooth, y)
   return tf.where(x > beta, x, y)
 
-get_custom_objects().update({'smelu': Activation(smelu)})
+tf.keras.saving.get_custom_objects().update({'smelu': Activation(smelu)})
