@@ -11,7 +11,7 @@ from chess import WHITE, BLACK
 from absl import app
 from absl import flags
 
-from encode import CNN_FEATURES, NUM_CLASSES, CNN_SHAPE_3D
+
 
 import tensorflow as tf
 import tensorflow.keras
@@ -24,6 +24,9 @@ from tensorflow.keras.losses import SparseCategoricalCrossentropy
 # from tensorflow.keras.optimizers.experimental import AdamW
 # from tensorflow.keras.optimizers.legacy import AdamW
 from tensorflow.keras.optimizers import Adam
+
+from encode import CNN_FEATURES, NUM_CLASSES, CNN_SHAPE_3D
+import smelu
 
 DATA_FORMAT = 'channels_last'
 
@@ -91,8 +94,7 @@ def create_model(mplan):
   else:
     kernel_regularizer = None
 
-
-  kernel_initializer = mplan.get('kernel', 'glorot_uniform')
+  kernel_initializer = mplan.get('kernel', 'random_uniform')
 
   my_conv2d = functools.partial(
     Conv2D,
