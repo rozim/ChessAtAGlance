@@ -12,7 +12,7 @@ num_filters = 16
 num_layers = 4
 top_tower = [ 256 ]
 kernel = 'random_uniform'
-activation = 'selu'
+activation = 'none'
 
 [train]
 

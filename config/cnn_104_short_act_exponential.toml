@@ -2,9 +2,7 @@
 
 batch = 1024
 
-train     = ['data/f1000.rio-000[1-9]?-of-00100']
-validate  = ['data/f1000.rio-000[0-0]?-of-00100']
-
+files     = ['data/f1000.rio-000??-of-00100']
 
 [model]
 
