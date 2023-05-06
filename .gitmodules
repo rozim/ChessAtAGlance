@@ -10,3 +10,6 @@
 [submodule "eco"]
 	path = eco
 	url = https://github.com/chimpden/eco.git
+[submodule "Mish"]
+	path = Mish
+	url = https://github.com/digantamisra98/Mish.git
