@@ -23,7 +23,7 @@ import toml
 
 #
 
-from data import create_dataset
+from data import create_dataset, split_dataset
 from model import create_model
 from model import create_bias_only_model
 from model import create_simple_model
@@ -141,8 +141,9 @@ def main(argv):
     toml.dump(plan, f)
   os.chmod(fn, 0o444)
 
-  ds_train = create_dataset(dplan.train, batch=dplan.batch, shuffle=dplan.batch * 25)
-  ds_val = create_dataset(dplan.validate, batch=dplan.batch, shuffle=None)
+  fns_train, fns_test = split_dataset(dplan.files)
+  ds_train = create_dataset(fns_train, batch=dplan.batch, shuffle=dplan.batch * 25)
+  ds_val = create_dataset(fns_test, batch=dplan.batch, shuffle=None)
 
   # prefetch tried here with no benefit or maybe worse
   # bs = 1024 * 1024
