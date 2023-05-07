@@ -12,7 +12,6 @@ from absl import app
 from absl import flags
 
 
-
 import tensorflow as tf
 import tensorflow.keras
 import tensorflow.keras.layers
@@ -73,14 +72,6 @@ def create_bias_only_model(mplan):
   return Model(inputs=[board], outputs=y)
 
 
-def get_activation(mplan):
-  if mplan.activation == "":
-    return None
-  if mplan.activation == "none":
-    return None
-  return mplan.activation
-
-
 def create_simple_model(mplan):
   kernel_regularizer = regularizers.l2(mplan.l2)
 
@@ -90,7 +81,7 @@ def create_simple_model(mplan):
 
   for _ in range(mplan.num_layers):
     # Skip LN for now.
-    x = Dense(NUM_CLASSES, activation=get_activation(mplan), kernel_regularizer=kernel_regularizer)(x)
+    x = Dense(NUM_CLASSES, activation=mplan.activation, kernel_regularizer=kernel_regularizer)(x)
 
   y = Dense(NUM_CLASSES, name='logits', activation=None, use_bias=False, kernel_regularizer=kernel_regularizer)(x)
   return Model(inputs=[board], outputs=y)
@@ -115,7 +106,7 @@ def create_model(mplan):
     use_bias=False)
   #my_ln = functools.partial(LayerNormalization, epsilon=1e-5)
   my_ln = LayerNormalization
-  my_act = functools.partial(Activation, get_activation(mplan))
+  my_act = functools.partial(Activation, activation=mplan.activation)
   my_dense = functools.partial(Dense, kernel_regularizer=kernel_regularizer,
                                kernel_initializer=kernel_initializer)
 
@@ -168,6 +159,8 @@ def create_model(mplan):
 
   y = my_dense(NUM_CLASSES, name='logits', activation=None, use_bias=False)(x)
   return Model(inputs=[board], outputs=y)
+
+
 
 
 def df_to_csv(df, fn, float_format='%6.4f'):
