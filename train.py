@@ -30,7 +30,7 @@ from model import create_model
 from model import create_bias_only_model
 from model import create_simple_model
 from plan import load_plan
-from lr import create_warm_linear_schedule
+from lr import create_warm_linear_scheduler, WarmLinearSchedule
 from train_util import df_to_csv, create_log_dir, LogLrCallback
 
 from tf_utils_callbacks.callbacks import BestNModelCheckpoint
@@ -138,7 +138,7 @@ def main(argv):
       write_steps_per_second=True,
       update_freq=1))
 
-  callbacks.append(create_warm_linear_schedule(tplan))
+  # callbacks.append(create_warm_linear_scheduler(tplan))
 
   callbacks.append(
     tf.keras.callbacks.ModelCheckpoint(
@@ -157,7 +157,7 @@ def main(argv):
   #   save_weights_only=False,
   #   verbose=1))
 
-  model.compile(optimizer=Adam(),
+  model.compile(optimizer=Adam(WarmLinearSchedule(tplan)),
                 loss=SparseCategoricalCrossentropy(from_logits=True),
                 metrics=['accuracy'])
 
@@ -165,6 +165,7 @@ def main(argv):
   # tf.keras.metrics.Precision(top_k=3, name='p_3', thresholds=0.0)])
 
   def run_train():
+    print("RUN ", tplan.epochs)
     return model.fit(x=ds_train,
                      epochs=tplan.epochs,
                      steps_per_epoch=tplan.steps_per_epoch,
