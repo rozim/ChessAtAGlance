@@ -36,7 +36,7 @@ def create_warm_linear_schedule(tplan):
 
 
 def main(argv):
-  plan = load_plan('sf1.toml')
+  plan = load_plan('config/cnn_tune_1.toml')
   tplan = plan.train
   lrs = create_warm_linear_schedule(tplan)
   func = lrs.schedule
