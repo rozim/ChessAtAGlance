@@ -1,0 +1,37 @@
+[data]
+
+batch = 1024
+
+files     = ['data/f1000.rio-000??-of-00100']
+
+[model]
+
+type = 'cnn'
+l2 = 1e-6
+num_filters = 16
+num_layers = 4
+top_tower = [ 256 ]
+kernel = 'random_uniform'
+activation = 'elu'
+
+[train]
+
+epochs = 100
+steps_per_epoch = 25
+val_steps = 25
+
+lr = 0.01
+lr_max_decay_factor = 0.90
+warmup = 10
+
+[tune]
+
+trials = 50
+executions = 1
+log_dir = '/tmp/tune_out5'
+tb_dir  = '/tmp/tune_logs5'
+
+activations = ['elu']
+lrs = [0.10, 0.01, 0.001]
+lr_max_decay_factors = [1.0, 0.90, 0.50, 0.10, 0.0]
+warmups = [0, 5, 10, 20]
