@@ -21,6 +21,8 @@ from tensorflow.python.keras import backend as K
 
 import toml
 
+from Mish.Mish.TFKeras import mish
+
 #
 
 from data import create_dataset, split_dataset
@@ -29,6 +31,7 @@ from model import create_bias_only_model
 from model import create_simple_model
 from plan import load_plan
 from lr import create_warm_linear_schedule
+from train_util import df_to_csv, create_log_dir, LogLrCallback
 
 from tf_utils_callbacks.callbacks import BestNModelCheckpoint
 
@@ -46,49 +49,6 @@ T_START = time.time()
 LOG_DIR = '/tmp/logs'
 
 #####
-
-
-def df_to_csv(df, fn, float_format='%6.4f'):
-  df.to_csv(fn, index=False, float_format=float_format)
-
-
-class LogLrCallback(Callback):
-  def on_epoch_begin(self, epoch, logs):
-    self.start_epoch = time.time()
-    self.tot_train = 0.0
-    self.tot_test = 0.0
-
-  def on_epoch_end(self, epoch, logs):
-    tf.summary.scalar('learning_rate', self.model.optimizer.lr, epoch)
-    tf.summary.scalar('time/train', self.tot_train, epoch)
-    tf.summary.scalar('time/test', self.tot_test, epoch)
-    tf.summary.scalar('time/epoch', time.time() - self.start_epoch, epoch)
-
-  def on_train_batch_begin(self, batch, logs=None):
-    self.t_train = time.time()
-
-  def on_train_batch_end(self, batch, logs=None):
-    self.tot_train += time.time() - self.t_train
-
-  def on_test_batch_begin(self, batch, logs=None):
-    self.t_test = time.time()
-
-  def on_test_batch_end(self, batch, logs=None):
-    self.tot_test += time.time() - self.t_test
-
-
-def create_log_dir(plan_fn):
-  """Create unique dir."""
-  base = os.path.splitext(os.path.basename(plan_fn))[0]
-  try_n = 0
-  while True:
-    try_n += 1
-    maybe = os.path.join(LOG_DIR, f'{base}_try_{try_n:02d}')
-    try:
-      os.makedirs(maybe)
-      return maybe
-    except FileExistsError:
-      pass  # Dup, try next
 
 
 def save_history(log_dir, df):
