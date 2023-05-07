@@ -5,6 +5,10 @@ class objdict(dict):
     assert name in self, (name, self.keys())
     return self[name]
 
+  def __setattr__(self, name, value):
+    assert name in self, (name, self.keys())
+    self[name] = value
+
 res = toml.load('foo.toml', objdict)
 
 print('title', res.title)
