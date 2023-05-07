@@ -20,7 +20,6 @@ def split_dataset(pats):
   fns = []
 
   for pat in pats:
-    print('pat: ', pat)
     for fn in glob.glob(pat):
       num_files += 1
       assert os.path.isfile(fn), fn
@@ -30,7 +29,6 @@ def split_dataset(pats):
 
   random.shuffle(fns)
   split_point = int(len(fns) * 0.9)
-  print('sp', split_point, len(fns))
   return fns[0:split_point], fns[split_point:]
 
 
@@ -46,7 +44,7 @@ def create_dataset(pats, batch=16, shuffle=None, repeat=True):
 
   # Don't do all else we get repeated batches it seems.
   fns_shuffle = max(1, num_files // 10)
-  fns = tf.data.Dataset.list_files(pats).cache().shuffle(fns_shuffle)
+  fns = tf.data.Dataset.list_files(pats).shuffle(fns_shuffle)
   ds = tf.data.TFRecordDataset(fns, 'ZLIB', num_parallel_reads=fns_shuffle)
   if repeat:
     ds = ds.repeat()
@@ -61,18 +59,23 @@ def create_dataset(pats, batch=16, shuffle=None, repeat=True):
 def main(argv):
   pat = 'data/f1000.rio-000??-of-00100'
   goal = len(glob.glob(pat))
-  train, test = split_dataset(['data/f1000.rio-000??-of-00100'])
-  train_s = set(train)
-  test_s = set(test)
-  for ent in train:
+  fns_train, fns_test = split_dataset(['data/f1000.rio-000??-of-00100'])
+  train_s = set(fns_train)
+  test_s = set(fns_test)
+  for ent in fns_train:
     print('train: ', ent)
   print()
-  for ent in test:
+  for ent in fns_test:
     print('test: ', ent)
   print(len(train_s))
   print(len(test_s))
   assert len(train_s & test_s) == 0
   assert len(train_s) + len(test_s) == goal
+
+  ds_train = create_dataset(fns_train, batch=2, shuffle=4)
+  for ent in ds_train:
+    print('ent: ', ent)
+    break
 
   sys.exit(0)
   ds = create_dataset('f10.rio-00009-of-00010', batch=1)
