@@ -42,29 +42,45 @@ def create_warm_linear_scheduler(tplan):
   return LearningRateScheduler(_create_warm_linear_scheduler)
 
 
-def create_warm(tplan):
-  epochs = tplan.epochs
-  warmup = tplan.warmup
+def create_poly_schedule(tplan):
+  return tf.keras.optimizers.schedules.PolynomialDecay(
+    initial_learning_rate=tplan.lr,
+    decay_steps=tplan.epochs * tplan.steps_per_epoch,
+    end_learning_rate=tplan.lr * tplan.lr_max_decay_factor,
+    power=1.0, # linear
+  )
+
+
+def create_warm_schedule(tplan):
+  max_steps = tplan.epochs * tplan.steps_per_epoch
+  warmup_steps = tplan.warmup_steps
   max_decay_factor = tplan.get('lr_max_decay_factor', 1.0)
   lr = tplan.lr
   values = []
 
-  for step in range(epochs):
-    step = step + 1
-    if step <= warmup:
-      values.append(lr * (step / warmup))
+  for step in range(1, max_steps + 1):
+    if step <= warmup_steps:
+      values.append(lr * (step / warmup_steps))
     else:
-      pct = (step - warmup) / (epochs - warmup)
+      pct = (step - warmup_steps) / (max_steps - warmup_steps)
       pct *= max_decay_factor
       values.append(lr - (pct * lr))
-  boundaries = list(range(0, epochs - 1))
+
+  boundaries = list(range(0, max_steps - 1))
+  assert len(values) - 1 == len(boundaries)
+
   return PiecewiseConstantDecay(values=values,
                                 boundaries=boundaries)
 
 
 def main(argv):
-  plan = load_plan('config/cnn_tune_1.toml')
+  plan = load_plan('config/cnn_tune_lr.toml')
   tplan = plan.train
+  lr = create_poly_schedule(tplan)
+  for i in range(tplan.epochs * tplan.steps_per_epoch):
+    print(i, lr(i))
+  sys.exit(0)
+
   lr = create_warm(tplan)
   for e in range(tplan.epochs):
     print(e, lr(e))

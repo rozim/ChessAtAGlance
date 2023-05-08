@@ -30,7 +30,7 @@ from model import create_model
 from model import create_bias_only_model
 from model import create_simple_model
 from plan import load_plan
-from lr import create_warm_linear_scheduler, WarmLinearSchedule
+from lr import create_warm_linear_scheduler, create_warm
 from train_util import df_to_csv, create_log_dir, LogLrCallback
 
 from tf_utils_callbacks.callbacks import BestNModelCheckpoint
@@ -157,7 +157,7 @@ def main(argv):
   #   save_weights_only=False,
   #   verbose=1))
 
-  model.compile(optimizer=Adam(WarmLinearSchedule(tplan)),
+  model.compile(optimizer=tf.keras.optimizers.legacy.Adam(create_warm(tplan)),
                 loss=SparseCategoricalCrossentropy(from_logits=True),
                 metrics=['accuracy'])
 

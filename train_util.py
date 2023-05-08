@@ -27,14 +27,45 @@ def create_log_dir(plan_fn):
 
 
 class LogLrCallback(Callback):
+  def __init__(self):
+    super().__init__()
+
   def on_epoch_begin(self, epoch, logs):
     self.start_epoch = time.time()
     self.tot_train = 0.0
     self.tot_test = 0.0
 
   def on_epoch_end(self, epoch, logs):
-    tf.summary.scalar('learning_rate', self.model.optimizer.lr, epoch)
+    lr = self.model.optimizer.learning_rate(epoch).numpy()
+    assert tf.summary.scalar('xxx_learning_rate', lr, epoch)
     tf.summary.scalar('time/train', self.tot_train, epoch)
+    tf.summary.scalar('time/test', self.tot_test, epoch)
+    tf.summary.scalar('time/epoch', time.time() - self.start_epoch, epoch)
+
+  def on_train_batch_begin(self, batch, logs=None):
+    self.t_train = time.time()
+
+  def on_train_batch_end(self, batch, logs=None):
+    self.tot_train += time.time() - self.t_train
+
+  def on_test_batch_begin(self, batch, logs=None):
+    self.t_test = time.time()
+
+  def on_test_batch_end(self, batch, logs=None):
+    self.tot_test += time.time() - self.t_test
+
+
+class LogTimeCallback(Callback):
+  def __init__(self):
+    super().__init__()
+
+  def on_epoch_begin(self, epoch, logs):
+    self.start_epoch = time.time()
+    self.tot_train = 0.0
+    self.tot_test = 0.0
+
+  def on_epoch_end(self, epoch, logs):
+    assert tf.summary.scalar('time/train', self.tot_train, epoch)
     tf.summary.scalar('time/test', self.tot_test, epoch)
     tf.summary.scalar('time/epoch', time.time() - self.start_epoch, epoch)
 

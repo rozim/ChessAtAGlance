@@ -23,20 +23,17 @@ import pandas as pd
 import smelu
 
 import tensorflow as tf
-from tensorflow.keras.optimizers import Adam
-from tensorflow.keras.callbacks import TerminateOnNaN, EarlyStopping, ModelCheckpoint, TensorBoard
+from tensorflow.keras.callbacks import TerminateOnNaN, EarlyStopping, TensorBoard
 from tensorflow.keras.losses import SparseCategoricalCrossentropy
 from tensorflow.python.keras import backend as K
 
 from data import create_dataset, split_dataset
 from model import create_model
 from plan import load_plan
-from lr import create_warm_linear_schedule
+from lr import  create_warm_schedule, create_poly_schedule
 from train_util import df_to_csv, create_log_dir
 
-from tf_utils_callbacks.callbacks import BestNModelCheckpoint
 
-from train_util import df_to_csv, create_log_dir, LogLrCallback
 
 flags.DEFINE_string('plan', None, 'toml file')
 flags.DEFINE_integer('verbose', 1, '')
@@ -95,11 +92,25 @@ def main(argv):
   ds_train = create_dataset(fns_train, batch=dplan.batch, shuffle=dplan.batch * 25)
   ds_val = create_dataset(fns_test, batch=dplan.batch, shuffle=None)
 
-  def make_build_model_fn(mplan):
+  def make_build_model_fn(plan):
+    mplan = plan.model
+    tplan = plan.train
+    dplan = plan.data
+    tune_plan = plan.tune
+
+    def choice(hp, name, values):
+      if len(values) == 1:
+        return values[0]
+      else:
+        return hp.Choice(name, values)
+
     def _build_model(hp):
-      mplan['activation'] = hp.Choice('activation', ACTIVATION)
+      mplan['activation'] = choice(hp, 'activation', tune_plan.activations)
+      tplan['lr'] = choice(hp, 'lr', tune_plan.lrs)
+      tplan['lr_max_decay_factor'] = choice(hp, 'lr_max_decay_factor', tune_plan.lr_max_decay_factors)
+      lr = create_poly_schedule(tplan)
       m = create_model(mplan)
-      m.compile(optimizer=tf.keras.optimizers.legacy.Adam(),
+      m.compile(optimizer=tf.keras.optimizers.legacy.Adam(learning_rate=lr),
                 loss=SparseCategoricalCrossentropy(from_logits=True),
                 metrics=['accuracy'])
       return m
@@ -108,7 +119,7 @@ def main(argv):
 
 #  tuner = keras_tuner.RandomSearch(
   tuner = keras_tuner.BayesianOptimization(
-    hypermodel=make_build_model_fn(mplan),
+    hypermodel=make_build_model_fn(plan),
     objective='val_accuracy',
     max_trials=tune_plan.trials,
     executions_per_trial=tune_plan.executions,
@@ -120,9 +131,13 @@ def main(argv):
   print()
 
   callbacks = [TerminateOnNaN(),
-               LogLrCallback(),
                TensorBoard(log_dir=tune_plan.tb_dir),
-               create_warm_linear_schedule(tplan)
+               EarlyStopping(
+                 patience=10,
+                 min_delta=1e-6,
+                 verbose=1,
+                 start_from_epoch=10
+                 )
                ]
 
   tuner.search(x=ds_train,
