@@ -1,0 +1,37 @@
+[data]
+
+batch = 1024
+
+files     = ['data/f1000.rio-000??-of-00100']
+
+[model]
+
+type = 'cnn'
+l2 = 1e-6
+num_filters = 16
+num_layers = 4
+top_tower = [ 256 ]
+kernel = 'random_normal'
+activation = 'elu'
+
+[train]
+
+epochs = 250
+steps_per_epoch = 25
+val_steps = 50
+
+lr = 0.005
+lr_max_decay_factor = 0.10
+
+[tune]
+
+trials = 100
+executions = 1
+log_dir = '/tmp/tune_lr_11_log'
+tb_dir  = '/tmp/tune_lr_11_tb'
+
+
+adam_beta_1s = [0.50, 0.60, 0.70, 0.80, 0.90, 0.95, 0.975, 0.99]
+adam_beta_2s = [0.900, 0.990, 0.995, 0.995, 0.999, 0.9999]
+adam_epsilons = [1e-6, 5e-6, 1e-7, 5e-7, 1e-8, 5e-8, 1e-9, 5e-9, 1e-10, 5e-10]
+# implied: amsgrad (T/F)
