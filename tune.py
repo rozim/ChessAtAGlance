@@ -105,12 +105,27 @@ def main(argv):
         return hp.Choice(name, values)
 
     def _build_model(hp):
-      mplan['activation'] = choice(hp, 'activation', tune_plan.activations)
-      tplan['lr'] = choice(hp, 'lr', tune_plan.lrs)
-      tplan['lr_max_decay_factor'] = choice(hp, 'lr_max_decay_factor', tune_plan.lr_max_decay_factors)
+      if 'activations' in tune_plan:
+        mplan['activation'] = choice(hp, 'activation', tune_plan.activations)
+
+      if 'lrs' in tune_plan:
+        tplan['lr'] = choice(hp, 'lr', tune_plan.lrs)
+
+      if 'lr_max_decay_factors' in tune_plan:
+        tplan['lr_max_decay_factor'] = choice(hp, 'lr_max_decay_factor', tune_plan.lr_max_decay_factors)
+
       lr = create_poly_schedule(tplan)
       m = create_model(mplan)
-      m.compile(optimizer=tf.keras.optimizers.legacy.Adam(learning_rate=lr),
+
+      beta_1 = choice(hp, 'beta_1', tune_plan.adam_beta_1s)
+      beta_2 = choice(hp, 'beta_2', tune_plan.adam_beta_2s)
+      epsilon = choice(hp, 'epsilon', tune_plan.adam_epsilons)
+      amsgrad = hp.Choice( 'amsgrad', [True, False])
+      m.compile(optimizer=tf.keras.optimizers.legacy.Adam(learning_rate=lr,
+                                                          beta_1=beta_1,
+                                                          beta_2=beta_2,
+                                                          epsilon=epsilon,
+                                                          amsgrad=amsgrad),
                 loss=SparseCategoricalCrossentropy(from_logits=True),
                 metrics=['accuracy'])
       return m
