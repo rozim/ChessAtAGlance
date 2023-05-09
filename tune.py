@@ -114,18 +114,35 @@ def main(argv):
       if 'lr_max_decay_factors' in tune_plan:
         tplan['lr_max_decay_factor'] = choice(hp, 'lr_max_decay_factor', tune_plan.lr_max_decay_factors)
 
+      if 'adam_beta_1s' in tune_plan:
+        tplan['adam_beta_1'] = choice(hp, 'beta_1', tune_plan.adam_beta_1s)
+      if 'adam_beta_2s' in tune_plan:
+        tplan['adam_beta_2'] = choice(hp, 'beta_2', tune_plan.adam_beta_2s)
+      if 'epsilon' in tune_plan:
+        tplan['adam_epsilon'] = choice(hp, 'epsilon', tune_plan.adam_epsilons)
+      if 'amsgrad' in tune_plan:
+        tplan['adam_amsgrad'] = hp.Choice( 'amsgrad', [True, False])
+
+      if 'num_filters_list' in tune_plan:
+        mplan['num_filters'] = choice(hp, 'num_filters', tune_plan.num_filters_list)
+      if 'num_layers_list' in tune_plan:
+        mplan['num_layers'] = choice(hp, 'num_layers', tune_plan.num_layers_list)
+      if 'top_tower_list' in tune_plan:
+        pick = choice(hp, 'top_tower', tune_plan.top_tower_list)
+        if pick == 0:
+          xpick = []
+        else:
+          xpick = [pick]
+        mplan['top_tower'] = xpick
+
       lr = create_poly_schedule(tplan)
       m = create_model(mplan)
 
-      beta_1 = choice(hp, 'beta_1', tune_plan.adam_beta_1s)
-      beta_2 = choice(hp, 'beta_2', tune_plan.adam_beta_2s)
-      epsilon = choice(hp, 'epsilon', tune_plan.adam_epsilons)
-      amsgrad = hp.Choice( 'amsgrad', [True, False])
       m.compile(optimizer=tf.keras.optimizers.legacy.Adam(learning_rate=lr,
-                                                          beta_1=beta_1,
-                                                          beta_2=beta_2,
-                                                          epsilon=epsilon,
-                                                          amsgrad=amsgrad),
+                                                          beta_1=tplan.adam_beta_1,
+                                                          beta_2=tplan.adam_beta_2,
+                                                          epsilon=tplan.adam_epsilon,
+                                                          amsgrad=tplan.adam_amsgrad),
                 loss=SparseCategoricalCrossentropy(from_logits=True),
                 metrics=['accuracy'])
       return m

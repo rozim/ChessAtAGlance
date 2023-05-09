@@ -157,7 +157,11 @@ def main(argv):
   #   save_weights_only=False,
   #   verbose=1))
 
-  model.compile(optimizer=tf.keras.optimizers.legacy.Adam(create_warm(tplan)),
+  model.compile(optimizer=tf.keras.optimizers.legacy.Adam(learning_rate=create_warm(tplan),
+                                                          beta_1=tplan.adam_beta_1,
+                                                          beta_2=tplan.adam_beta_2,
+                                                          epsilon=tplan.adam_epsilon,
+                                                          amsgrad=tplan.adam_amsgrad)
                 loss=SparseCategoricalCrossentropy(from_logits=True),
                 metrics=['accuracy'])
 
