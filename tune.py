@@ -135,6 +135,9 @@ def main(argv):
           xpick = [pick]
         mplan['top_tower'] = xpick
 
+      if 'tune_do_flatten_1x1' in tune_plan:
+        mplan['do_flatten_1x1'] = hp.Choice('do_flatten_1x1', [True, False])
+
       lr = create_poly_schedule(tplan)
       m = create_model(mplan)
 

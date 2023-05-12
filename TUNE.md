@@ -1,3 +1,27 @@
+
+2023-05-11
+==========
+
+layers/filters/flatten_1x1
+
+best overall
+
+	do_flatten_1x1		False  			2023-05-11
+	top_tower		512
+	num_layers		7
+	num_filters		192
+
+general pattern
+	do_flatten_1x1 must be off - will be removed from model.py
+	numn_layers=7 seemns like the sweet spot, though the bayesian alg may have focused on that
+	filters=192 best, and higher better, though this was the max tested
+	for top_tower, 512 and then 768 are best -- only tried 1 layer
+
+num_filters_list = [32, 48, 64, 96, 112, 128, 144, 160, 192]
+num_layers_list =  [4, 5, 6, 7, 8, 9, 10, 12]
+top_tower_list = [ 128, 256, 512, 768, 1024, 1280, 1536 ]
+
+
 2023-05-08
 ==========
 

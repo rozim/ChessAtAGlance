@@ -1,5 +1,10 @@
 
 
+do_flatten_1x1		False  			2023-05-11
+top_tower		512
+num_layers		7
+num_filters		192
+
 adam amsgrad		False			2023-05-08
 adam beta_1		0.60
 adam beta_2		0.995
