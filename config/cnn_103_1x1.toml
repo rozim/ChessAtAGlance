@@ -13,7 +13,6 @@ activation = 'elu'
 num_filters = 128
 num_layers = 24
 top_tower = [ 1968 ]
-do_flatten_1x1 = true
 
 [train]
 

@@ -136,19 +136,8 @@ def create_model(mplan):
       x = Add()([x, skip])
       x = my_act()(x)
 
-  if mplan.get('do_flatten_1x1', False):
-    # TBD: unclear where this came from - Squeeze and Excite?
-    x = Conv2D(
-      filters=mplan.num_filters,
-      kernel_size=(1, 1),
-      kernel_regularizer=kernel_regularizer,
-      kernel_initializer=kernel_initializer,
-      data_format=DATA_FORMAT,
-      padding='same',
-      use_bias=False,
-      name='1x1_cnn')(x)
-    x = my_ln(name=f'1x1_ln')(x)
-    x = my_act(name=f'1x1_act')(x)
+  # Historical note: flatten_1x1 removed here, was proven worse
+  # than leaving it out.
 
   x = Flatten()(x)
 
