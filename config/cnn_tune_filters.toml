@@ -18,7 +18,7 @@ activation = 'elu'
 
 epochs = 100
 steps_per_epoch = 25
-val_steps = 25
+val_steps = 50
 
 lr = 0.005
 lr_max_decay_factor = 0.10
@@ -32,9 +32,10 @@ adam_amsgrad = false
 
 trials = 100
 executions = 1
-log_dir = '/tmp/tune_lr_14_log'
-tb_dir  = '/tmp/tune_lr_14_tb'
+log_dir = '/tmp/tune_lr_16_log'
+tb_dir  = '/tmp/tune_lr_16_tb'
 
-num_filters_list = [2, 4, 8, 12, 16, 24, 32, 48, 64, 96, 112, 128, 144, 160, 192]
-num_layers_list =  [0, 1, 2, 4, 5, 6, 7, 8, 9, 10]
-top_tower_list = [ 0, 128, 256, 512, 768, 1024, 1280, 1536, 2048 ]
+num_filters_list = [32, 48, 64, 96, 112, 128, 144, 160, 192]
+num_layers_list =  [4, 5, 6, 7, 8, 9, 10, 12]
+top_tower_list = [ 128, 256, 512, 768, 1024, 1280, 1536 ]
+tune_do_flatten_1x1 = true
