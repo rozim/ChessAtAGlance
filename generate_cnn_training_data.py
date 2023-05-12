@@ -16,8 +16,10 @@
 #
 import glob
 import os, sys
+import pickle
 import random
 import time
+import zlib
 
 from absl import app
 from absl import flags
@@ -28,17 +30,22 @@ import chess.pgn
 
 import numpy as np
 
+import sqlitedict
+
 import tensorflow as tf
 
 from encode import encode_cnn_board_move_wtm
 from pychess_util import *
 from tf_util import *
 
+
 FLAGS = flags.FLAGS
 
-flags.DEFINE_string('pgn', 't1.pgn', 'PGN file')
-flags.DEFINE_string('out', 'foo.rio', 'Recordio file')
+flags.DEFINE_string('pgn', 't1.pgn', 'PGN file or pattern')
+flags.DEFINE_string('out', '', 'Recordio file')
 flags.DEFINE_integer('shards', 1, 'Number of shards')
+
+flags.DEFINE_string('sqlite_out', '', 'Write to to sqlite')
 
 
 def shuffled(ar):
@@ -46,9 +53,17 @@ def shuffled(ar):
   return ar
 
 
+def my_encode(obj):
+  return zlib.compress(pickle.dumps(obj, pickle.HIGHEST_PROTOCOL))
+
+
+def my_decode(obj):
+  return pickle.loads(zlib.decompress(bytes(obj)))
+
+
 def main(argv):
   assert FLAGS.pgn
-  assert FLAGS.out
+  assert FLAGS.out or FLAGS.sqlite_out
   assert FLAGS.shards > 0
 
   t_start = time.time()
@@ -56,12 +71,22 @@ def main(argv):
     compression_type='ZLIB',
     output_buffer_size=(4 * 1024 * 1024))
 
-  if FLAGS.shards == 1:
-    rio = [tf.io.TFRecordWriter(FLAGS.out, opts)]
-  else:
-    rio = [
-      tf.io.TFRecordWriter(f'{FLAGS.out}-{shard:05d}-of-{FLAGS.shards:05d}', opts)
-      for shard in range(FLAGS.shards)]
+  rio, dbio = None, None
+  if FLAGS.out:
+    if FLAGS.shards == 1:
+      rio = [tf.io.TFRecordWriter(FLAGS.out, opts)]
+    else:
+      rio = [
+        tf.io.TFRecordWriter(f'{FLAGS.out}-{shard:05d}-of-{FLAGS.shards:05d}', opts)
+        for shard in range(FLAGS.shards)]
+  if FLAGS.sqlite_out:
+    print('Open: ', FLAGS.sqlite_out)
+    assert FLAGS.shards == 1
+    dbio = sqlitedict.open(FLAGS.sqlite_out,
+                           flag='c',
+                           timeout=60,
+                           encode=my_encode,
+                           decode=my_decode)
 
   already = set()
   n_game, n_move, n_gen, n_dup = 0, 0, 0, 0
@@ -100,10 +125,20 @@ def main(argv):
           'fen':  bytes_feature(fen.encode('utf-8')),
         }
         pb = tf.train.Example(features=tf.train.Features(feature=feature))
-        rio[random.randint(0, FLAGS.shards-1)].write(pb.SerializeToString())
+        if rio is not None:
+          rio[random.randint(0, FLAGS.shards-1)].write(pb.SerializeToString())
+        if dbio is not None:
+          dbio[str(hash(fen))] = pb
+          if n_gen % 100000 == 0:
+            print("COMMIT")
+            dbio.commit()
 
-  for fh in rio:
-    fh.close()
+  if rio:
+    for fh in rio:
+      fh.close()
+  if dbio:
+    dbio.commit()
+    dbio.close()
 
   print('n_game: ', n_game)
   print('n_move: ', n_move)
