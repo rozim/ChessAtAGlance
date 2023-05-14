@@ -1,4 +1,6 @@
 
+max_gradient		1.0			2023-05-14
+l2			1e-9
 
 do_flatten_1x1		False  			2023-05-11
 top_tower		512

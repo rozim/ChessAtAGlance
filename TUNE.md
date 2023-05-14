@@ -1,4 +1,27 @@
 
+2023-05-14
+==========
+
+set executions=2 for (l2,max gradient)
+very slow now, like 3h/run
+the oracle thing didn't explore all the gradient values, so
+may need to run again with max_gradients having more values between
+0.1 and 1, and executions=0
+
+this is what I had:
+l2_list = [1e-3, 1e-4, 1e-5, 1e-6, 1e-7, 1e-8, 1e-9, 1e-9, 1e-10]
+max_gradients = [10.0, 1.0, 0.1, 0.0]
+..
+epochs = 100
+steps_per_epoch = 25
+val_steps = 50
+...
+num_filters = 192
+num_layers = 7
+top_tower = [ 512 ]
+
+
+
 2023-05-11
 ==========
 

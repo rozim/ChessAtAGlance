@@ -80,3 +80,15 @@ class LogTimeCallback(Callback):
 
   def on_test_batch_end(self, batch, logs=None):
     self.tot_test += time.time() - self.t_test
+
+
+# For Keras legacy optimizers.
+# Partial credit after multiple probes ending
+# with "I think you need to use the gradient_transformers parameter.".
+# It probably didn't correctly gen a func using (grad,va) tuples
+def clip_gradients(max_grad):
+
+  def _clip_gradients(grads_and_vars):
+    return [(tf.clip_by_norm(g, max_grad), v) for g, v in grads_and_vars]
+
+  return _clip_gradients

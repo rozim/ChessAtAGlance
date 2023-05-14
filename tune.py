@@ -31,7 +31,7 @@ from data import create_dataset, split_dataset
 from model import create_model
 from plan import load_plan
 from lr import  create_warm_schedule, create_poly_schedule
-from train_util import df_to_csv, create_log_dir
+from train_util import df_to_csv, create_log_dir, clip_gradients
 
 
 
@@ -135,6 +135,15 @@ def main(argv):
           xpick = [pick]
         mplan['top_tower'] = xpick
 
+      if 'l2_list' in tune_plan:
+        mplan['l2'] = choice(hp, 'l2', tune_plan.l2_list)
+
+      optimizer_extra = {}
+      if 'max_gradients' in tune_plan:
+        tplan['max_gradient'] = choice(hp, 'max_gradient', tune_plan.max_gradients)
+        if tplan['max_gradient'] > 0.0:
+          optimizer_extra['gradient_transformers'] = [clip_gradients(tplan['max_gradient'])]
+
       lr = create_poly_schedule(tplan)
       m = create_model(mplan)
 
@@ -142,7 +151,9 @@ def main(argv):
                                                           beta_1=tplan.adam_beta_1,
                                                           beta_2=tplan.adam_beta_2,
                                                           epsilon=tplan.adam_epsilon,
-                                                          amsgrad=tplan.adam_amsgrad),
+                                                          amsgrad=tplan.adam_amsgrad,
+                                                          **optimizer_extra
+                                                          ),
                 loss=SparseCategoricalCrossentropy(from_logits=True),
                 metrics=['accuracy'])
       return m
