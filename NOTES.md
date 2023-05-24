@@ -1,4 +1,74 @@
 
+2023-05-15
+==========
+
+date; cat *-dump-fix.sql | python transactions-10k.py | nice -19 time sqlite3 mega.sqlite ; date
+Sun May 14 13:57:30 PDT 2023
+    50514.66 real      1405.38 user     21534.95 sys
+Mon May 15 03:59:25 PDT 2023
+
+ls -l -h mega.sqlite
+-rw-r--r--  1 dave  staff    71G May 15 03:59 mega.sqlite
+
+avg 333 bytes/position
+
+sqlite3 mega.sqlite
+SQLite version 3.41.1 2023-03-10 12:13:52
+Enter ".help" for usage hints.
+sqlite> .timer on
+sqlite> select count(*) from unnamed;
+228623421
+Run Time: real 192.382 user 0.655760 sys 17.968960
+sqlite> select rowid from unnamed limit 1;
+109583245
+Run Time: real 0.004 user 0.000270 sys 0.000956
+sqlite> select rowid from unnamed order by random() limit 1;
+109275462
+Run Time: real 202.962 user 10.922697 sys 18.163202
+sqlite>
+
+
+nice time python sqlite3_to_recordio.py
+...
+QUERY:  SELECT value FROM unnamed WHERE CAST(ABS(key + rowid) AS INTEGER) % 100 == 14 ORDER BY RANDOM()
+226338386 196
+227678283 60
+
+ALL DONE
+    25678.29 real     12799.71 user      2366.27 sys
+
+wc -c mega-v2.rio-000*
+...
+ 263546446 mega-v2.rio-00098-of-00100
+ 263702914 mega-v2.rio-00099-of-00100
+ 26374343742 total
+wc -c f1000.rio-000* | tail
+...
+ 234451948 f1000.rio-00091-of-00100
+ 234234813 f1000.rio-00092-of-00100
+ 234309806 f1000.rio-00093-of-00100
+ 234385515 f1000.rio-00094-of-00100
+ 234401431 f1000.rio-00095-of-00100
+ 234216630 f1000.rio-00096-of-00100
+ 234043649 f1000.rio-00097-of-00100
+ 234195697 f1000.rio-00098-of-00100
+ 233879858 f1000.rio-00099-of-00100
+ 23423143484 total
+(base) dave@macbook-pro data %
+
+2023-05-14
+==========
+
+
+CREATE TABLE IF NOT EXISTS "unnamed" (key TEXT PRIMARY KEY, value BLOB);
+
+2023-05-14
+==========
+
+rows in *fix.sql files, before trying to build mega db
+
+228,623,421
+
 2023-05-08
 ==========
 
