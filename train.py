@@ -30,7 +30,7 @@ from model import create_model
 from model import create_bias_only_model
 from model import create_simple_model
 from plan import load_plan
-from lr import create_warm_linear_scheduler, create_warm
+from lr import create_poly_schedule
 from train_util import df_to_csv, create_log_dir, LogLrCallback
 
 from tf_utils_callbacks.callbacks import BestNModelCheckpoint
@@ -138,8 +138,6 @@ def main(argv):
       write_steps_per_second=True,
       update_freq=1))
 
-  # callbacks.append(create_warm_linear_scheduler(tplan))
-
   callbacks.append(
     tf.keras.callbacks.ModelCheckpoint(
       filepath=os.path.join(log_dir, 'checkpoint_{epoch:04d}-{val_accuracy:.2f}'),
@@ -157,11 +155,13 @@ def main(argv):
   #   save_weights_only=False,
   #   verbose=1))
 
-  model.compile(optimizer=tf.keras.optimizers.legacy.Adam(learning_rate=create_warm(tplan),
-                                                          beta_1=tplan.adam_beta_1,
-                                                          beta_2=tplan.adam_beta_2,
-                                                          epsilon=tplan.adam_epsilon,
-                                                          amsgrad=tplan.adam_amsgrad)
+  lr = create_poly_schedule(tplan)
+  optimizer = tf.keras.optimizers.legacy.Adam(learning_rate=lr,
+                                              beta_1=tplan.adam_beta_1,
+                                              beta_2=tplan.adam_beta_2,
+                                              epsilon=tplan.adam_epsilon,
+                                              amsgrad=tplan.adam_amsgrad)
+  model.compile(optimizer=optimizer,
                 loss=SparseCategoricalCrossentropy(from_logits=True),
                 metrics=['accuracy'])
 
