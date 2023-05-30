@@ -26,6 +26,7 @@ from tensorflow.keras.optimizers import Adam
 
 from encode import *
 from pychess_util import *
+from plan import load_plan
 
 # https://www.tensorflow.org/api_docs/python/tfm/nlp/layers/PositionEmbedding
 class PositionEmbedding(tf.keras.layers.Layer):
@@ -138,55 +139,56 @@ class PositionEmbedding(tf.keras.layers.Layer):
 
 
 def create_transformer_model(mplan):
-  my_ln = LayerNormalization
-  kernel_regularizer = None
+  if hasattr(mplan, 'l2'):
+    kernel_regularizer = regularizers.l2(mplan.get('l2', 0.0))
+  else:
+    kernel_regularizer = None
   kernel_initializer = mplan.get('kernel', 'random_uniform')
 
-  my_dense = functools.partial(Dense, kernel_regularizer=kernel_regularizer,
+  embedding_dim = mplan.embedding_dim
+  intermediate_dim = mplan.intermediate_dim
+
+  my_ln = LayerNormalization
+  my_act = functools.partial(Activation, activation=mplan.get('activation', 'relu'))
+  my_dense = functools.partial(Dense,
+                               kernel_regularizer=kernel_regularizer,
                                kernel_initializer=kernel_initializer)
 
-  board = Input(shape=TRANSFORMER_LENGTH, name='board', dtype='int32')
-  output_dim = 4
-  intermediate_dim = 32
-
-  x = board
   emb_layer = tf.keras.layers.Embedding(input_dim=TRANSFORMER_VOCABULARY,
-                                        output_dim=output_dim,
+                                        output_dim=embedding_dim,
                                         input_length=TRANSFORMER_LENGTH,
                                         name="token_table")
+
+  pos_layer = PositionEmbedding(max_length=TRANSFORMER_LENGTH)
+
+  board = Input(shape=TRANSFORMER_LENGTH, name='board', dtype='int32')
+
+  x = board
   x = emb_layer(x)
-
-  if True:
-    pos_layer = PositionEmbedding(max_length=TRANSFORMER_LENGTH)
-    x = pos_layer(x)
-  else:
-    pos_layer = tf.keras.layers.Embedding(input_dim=TRANSFORMER_LENGTH,
-                                        output_dim=output_dim,
-                                        input_length=TRANSFORMER_LENGTH,
-                                        name="pos_table")
-    x = tf.keras.layers.Add()([x, pos_layer(tf.range(TRANSFORMER_LENGTH))])
-
-
-  x = Dense(intermediate_dim, name='project')(x) # project so skip works
+  x = Add()([pos_layer(x), x])
+  x = my_dense(intermediate_dim, name='project')(x) # project so skip works
   x = my_ln()(x)
 
-  for lnum in range(2):
-    x = MultiHeadAttention(num_heads=2,
+  for lnum in range(mplan.num_layers):
+    x = MultiHeadAttention(num_heads=mplan.num_heads,
                            key_dim=intermediate_dim,
                            value_dim=intermediate_dim,
+                           kernel_regularizer=kernel_regularizer,
+                           kernel_initializer=kernel_initializer,
+                           dropout=mplan.dropout,
                            name=f'mha_{lnum}')(query=x, key=x, value=x)
 
-  for lnum in range(0):
-    skip = x
-    x = tf.keras.layers.Attention(name=f'attn_{lnum}a')([x, x])
-    x = my_ln(name=f'ln_{lnum}a')(x) # check order
-    x = Add(name=f'add_{lnum}a')([x, skip])
+  # for lnum in range(0):
+  #   skip = x
+  #   x = tf.keras.layers.Attention(name=f'attn_{lnum}a')([x, x])
+  #   x = my_ln(name=f'ln_{lnum}a')(x) # check order
+  #   x = Add(name=f'add_{lnum}a')([x, skip])
 
-    skip = x
-    x = Dense(intermediate_dim, name=f'dense_{lnum}b')(x)
-    x = my_ln(name=f'ln_{lnum}b')(x)
-    x = Activation(name=f'act_{lnum}b', activation='gelu')(x)
-    x = Add(name=f'add_{lnum}b')([x, skip])
+  #   skip = x
+  #   x = Dense(intermediate_dim, name=f'dense_{lnum}b')(x)
+  #   x = my_ln(name=f'ln_{lnum}b')(x)
+  #   x = Activation(name=f'act_{lnum}b', activation='gelu')(x)
+  #   x = Add(name=f'add_{lnum}b')([x, skip])
 
   x = Flatten()(x)
   x = my_ln()(x)
@@ -201,7 +203,8 @@ def gen():
       yield enc_board, enc_move
 
 def main(argv):
-  model = create_transformer_model(mplan={})
+  plan = load_plan('config/transformer_1.toml')
+  model = create_transformer_model(mplan=plan.model)
   model.summary(expand_nested=True)
   for t in model.inputs:
     print("INPUT: ", t)

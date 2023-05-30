@@ -35,6 +35,7 @@ CNN_ONES_PLANE = np.ones(64)
 # 4: castle
 # 1: ep square
 TRANSFORMER_LENGTH = (64 + 4 + 1)
+TRANSFORMER_SHAPE = (TRANSFORMER_LENGTH,)
 TRANSFORMER_VOCABULARY = 38
 
 CO_P2I = [
@@ -144,6 +145,11 @@ TRANSFORMER_EP_DECODE = {
 
 CNN_FEATURES = {
   'board': tf.io.FixedLenFeature(CNN_SHAPE_3D, tf.float32),
+  'label': tf.io.FixedLenFeature([], tf.int64)
+}
+
+TRANSFORMER_FEATURES = {
+  'board': tf.io.FixedLenFeature(TRANSFORMER_SHAPE, tf.int64),
   'label': tf.io.FixedLenFeature([], tf.int64)
 }
 

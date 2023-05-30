@@ -1,0 +1,32 @@
+[data]
+
+batch = 1024
+
+files     = ['data/mega-v2.rio-000??-of-00100']
+
+[model]
+
+type = 'cnn'
+l2 = 1e-9
+num_filters = 192
+num_layers = 7
+top_tower = [ 512 ]
+
+kernel = 'random_normal'
+activation = 'elu'
+
+[train]
+
+epochs = 100
+steps_per_epoch = 25
+val_steps = 50
+
+lr = 0.005
+lr_max_decay_factor = 0.10
+
+adam_beta_1 = 0.60
+adam_beta_2 = 0.995
+adam_epsilon = 1e-10
+adam_amsgrad = false
+
+max_gradient = 1.0

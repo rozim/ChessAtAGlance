@@ -7,11 +7,16 @@ import sys
 import tensorflow as tf
 from absl import app
 from encode import CNN_FEATURES, NUM_CLASSES, CNN_SHAPE_3D
+from encode import TRANSFORMER_FEATURES, TRANSFORMER_SHAPE
 
 AUTOTUNE = tf.data.AUTOTUNE
 
 def extract(blob):
   t = tf.io.parse_example(blob, features=CNN_FEATURES)
+  return t['board'], t['label']  # features, label [, weights]
+
+def extract_transformer(blob):
+  t = tf.io.parse_example(blob, features=TRANSFORMER_FEATURES)
   return t['board'], t['label']  # features, label [, weights]
 
 
@@ -27,13 +32,20 @@ def split_dataset(pats):
   if num_files == 0:
     assert False, 'no files ' + pat
 
+  if num_files == 2:
+    return ([fns[0]], [fns[1]])
+
   random.shuffle(fns)
   split_point = int(len(fns) * 0.9)
   return fns[0:split_point], fns[split_point:]
 
 
-def create_dataset(pats, batch=16, shuffle=None, repeat=True):
+def create_dataset(pats, batch=16, shuffle=None, repeat=True, mtype='cnn'):
   num_files = 0
+  if mtype == 'transformer':
+    f_extract = extract_transformer
+  else:
+    f_extract = extract
 
   for pat in pats:
     for fn in glob.glob(pat):
@@ -51,7 +63,7 @@ def create_dataset(pats, batch=16, shuffle=None, repeat=True):
   if shuffle:
     ds = ds.shuffle(shuffle)
   ds = ds.batch(batch, drop_remainder=False)
-  ds = ds.map(extract, num_parallel_calls=AUTOTUNE, deterministic=False)
+  ds = ds.map(f_extract, num_parallel_calls=AUTOTUNE, deterministic=False)
   ds = ds.prefetch(AUTOTUNE)
   return ds
 

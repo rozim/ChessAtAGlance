@@ -29,6 +29,7 @@ from data import create_dataset, split_dataset
 from model import create_model
 from model import create_bias_only_model
 from model import create_simple_model
+from model_transformer import create_transformer_model
 from plan import load_plan
 from lr import create_poly_schedule
 from train_util import df_to_csv, create_log_dir, LogLrCallback
@@ -102,8 +103,10 @@ def main(argv):
   os.chmod(fn, 0o444)
 
   fns_train, fns_test = split_dataset(dplan.files)
-  ds_train = create_dataset(fns_train, batch=dplan.batch, shuffle=dplan.batch * 25)
-  ds_val = create_dataset(fns_test, batch=dplan.batch, shuffle=None)
+  print("TRAIN: ", fns_train)
+  print("TEST: ", fns_test)
+  ds_train = create_dataset(fns_train, batch=dplan.batch, shuffle=dplan.batch * 25, mtype=mplan.type)
+  ds_val = create_dataset(fns_test, batch=dplan.batch, shuffle=None, mtype=mplan.type)
 
   # prefetch tried here with no benefit or maybe worse
   # bs = 1024 * 1024
@@ -115,6 +118,8 @@ def main(argv):
     model = create_simple_model(mplan)
   elif mplan.type == 'cnn':
     model = create_model(mplan)
+  elif mplan.type == 'transformer':
+    model = create_transformer_model(mplan)
 
   callbacks = [TerminateOnNaN(),
                LogLrCallback()

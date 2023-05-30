@@ -1,4 +1,8 @@
 
+2023-05-29
+==========
+nice -19 python -u generate_transformer_training_data.py  "--pgn=../ChessData/Twic/twic*.pgn"  --sqlite_out=data3/mega.db >& tx.shh
+
 2023-05-15
 ==========
 
