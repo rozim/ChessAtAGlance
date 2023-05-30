@@ -34,8 +34,8 @@ CNN_ONES_PLANE = np.ones(64)
 # 64: squares
 # 4: castle
 # 1: ep square
-TRANSFORMER_SIZE = (64 + 4 + 1)
-
+TRANSFORMER_LENGTH = (64 + 4 + 1)
+TRANSFORMER_VOCABULARY = 38
 
 CO_P2I = [
   { # black
@@ -138,7 +138,7 @@ TRANSFORMER_EP_DECODE = {
   v: k for k, v in TRANSFORMER_EP.items()
   }
 
-TRANSFORMER_VOCABULARY = 38
+
 
 
 
@@ -199,7 +199,7 @@ def encode_transformer_board_move_wtm(board, move):
           MOVE_TO_INDEX[move.uci()])
 
 def encode_transformer_board_wtm(board):
-  ar = np.zeros(TRANSFORMER_SIZE, dtype=np.int8)
+  ar = np.zeros(TRANSFORMER_LENGTH, dtype=np.int8)
   for piece in [PAWN, KNIGHT, BISHOP, ROOK, QUEEN, KING]:
     for color in [WHITE, BLACK]:
       for sq in board.pieces(piece, color):

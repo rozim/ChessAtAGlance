@@ -1,4 +1,5 @@
 import chess
+import chess.pgn
 
 def gen_games(fn):
   with open(fn, encoding="ISO-8859-1") as pgn:

@@ -25,7 +25,7 @@ from tensorflow.keras.losses import SparseCategoricalCrossentropy
 from tensorflow.keras.optimizers import Adam
 
 from encode import CNN_FEATURES, NUM_CLASSES, CNN_SHAPE_3D
-import smelu
+from plan import load_plan
 
 DATA_FORMAT = 'channels_last'
 
@@ -88,8 +88,8 @@ def create_simple_model(mplan):
 
 
 def create_model(mplan):
-  if mplan.l2:
-    kernel_regularizer = regularizers.l2(mplan.l2)
+  if hasattr(mplan, 'l2'):
+    kernel_regularizer = regularizers.l2(mplan.get('l2', 0.0))
   else:
     kernel_regularizer = None
 
@@ -97,7 +97,7 @@ def create_model(mplan):
 
   my_conv2d = functools.partial(
     Conv2D,
-    filters=mplan.num_filters,
+    filters=mplan.get('num_filters', 1),
     kernel_size=(3, 3),
     kernel_regularizer=kernel_regularizer,
     kernel_initializer=kernel_initializer,
@@ -106,7 +106,7 @@ def create_model(mplan):
     use_bias=False)
   #my_ln = functools.partial(LayerNormalization, epsilon=1e-5)
   my_ln = LayerNormalization
-  my_act = functools.partial(Activation, activation=mplan.activation)
+  my_act = functools.partial(Activation, activation=mplan.get('activation', 'relu'))
   my_dense = functools.partial(Dense, kernel_regularizer=kernel_regularizer,
                                kernel_initializer=kernel_initializer)
 
@@ -118,7 +118,7 @@ def create_model(mplan):
   x = Permute([2, 3, 1])(x)
 
   # If not set then assume we are skipping everything.
-  if mplan.num_filters:
+  if hasattr(mplan, 'num_filters'):
     # Get to right size so skip can work
     x = my_conv2d()(x)
     x = my_ln()(x)
@@ -162,8 +162,9 @@ def extract(blob):
 def main(argv):
   from tensorflow.keras.callbacks import TerminateOnNaN, EarlyStopping, ModelCheckpoint, LambdaCallback, Callback
 
-  model = create_model()
-  model.summary()
+  plan = load_plan('config/cnn_105.toml')
+  model = create_model(mplan=plan.model)
+  model.summary(expand_nested=True)
 
   ds = tf.data.TFRecordDataset(['foo.rio'], 'ZLIB')
   ds = ds.batch(16)
