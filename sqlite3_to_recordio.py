@@ -16,7 +16,7 @@ import sqlite3
 
 import tensorflow as tf
 
-flags.DEFINE_string('out', 'data/mega-v2.rio', 'Recordio file')
+flags.DEFINE_string('out', 'data3/tx-v1.rio', 'Recordio file')
 flags.DEFINE_integer('shards', 100, 'Number of shards')
 FLAGS = flags.FLAGS
 
@@ -40,9 +40,9 @@ def main(argv):
       tf.io.TFRecordWriter(f'{FLAGS.out}-{shard:05d}-of-{FLAGS.shards:05d}', opts)
       for shard in range(FLAGS.shards)]
 
+  conn = sqlite3.connect('data3/mega.db')
 
-  conn = sqlite3.connect('data2/mega.sqlite')
-
+  # 100 times select 1% of the DB and write to recordio.
   ids = list(range(100))
   random.shuffle(ids)
 
