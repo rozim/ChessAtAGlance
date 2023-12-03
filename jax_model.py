@@ -21,6 +21,7 @@ from flax.training import train_state
 import tensorflow as tf
 
 from ml_collections import config_dict
+from ml_collections import config_flags
 
 import optax
 
@@ -29,6 +30,7 @@ from encode import CNN_FEATURES, CNN_SHAPE_3D, NUM_CLASSES
 
 AUTOTUNE = tf.data.AUTOTUNE
 
+CONFIG = config_flags.DEFINE_config_file('config', 'config.py')
 
 class ChessCNN(nn.Module):
   num_filters: int
@@ -165,27 +167,8 @@ def main(argv):
   params = model.init(rng, x)
   jax.tree_map(lambda x: x.shape, params) # Check the parameters
 
-  config = config_dict.ConfigDict()
-  config.train = config_dict.ConfigDict()
-  config.train.data = config_dict.ConfigDict()
-  config.test = config_dict.ConfigDict()
-  config.test.data = config_dict.ConfigDict()
-
-  config.lr = 5e-3
-  config.batch_size = 1024
-  config.epochs = 1000
-
-  config.train.steps = 10
-  config.test.steps = 1
-
-  config.train.data.batch_size = config.get_ref('batch_size')
-  config.test.data.batch_size = config.get_ref('batch_size')
-
-  config.train.data.shuffle = 100 * config.get_ref('batch_size')
-  config.test.data.shuffle = 0
-
-  config.train.data.pat = 'data/cnn-1m-0000[0-8]-of-00010.recordio'
-  config.test.data.pat = 'data/cnn-1m-0000[9]-of-00010.recordio'
+  config = CONFIG.value
+  print(config)
 
   state = init_train_state(
     model,
