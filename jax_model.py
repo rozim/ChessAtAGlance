@@ -251,13 +251,17 @@ def main(argv):
     os.path.join(LOGDIR.value, 'train'))
   test_writer = tf.summary.create_file_writer(
     os.path.join(LOGDIR.value, 'test'))
+  final_writer = tf.summary.create_file_writer(
+    os.path.join(LOGDIR.value, 'final'))
 
   hparams = {
-    'start': START,
+    'start': (START - 1701632426),
     'optimizer': 'adam',
     'lr': config.lr,
     'num_blocks': config.model.num_blocks,
     'num_filters': config.model.num_filters,
+    'num_top': config.model.num_top,
+    'top_width': config.model.top_width,
   }
 
   for epoch in range(config.epochs):
@@ -271,16 +275,16 @@ def main(argv):
 
     metrics = accumulate_metrics(train_metrics)
     dt = time.time() - t1
-    loss = jnp.asarray(metrics['loss'])
-    acc = jnp.asarray(metrics['accuracy'])
-    print(f'train/{epoch:8d} {dt:6.1f}s loss={loss:6.4f} acc={acc:.4f}')
+    train_loss = jnp.asarray(metrics['loss'])
+    train_acc = jnp.asarray(metrics['accuracy'])
+    print(f'train/{epoch:8d} {dt:6.1f}s loss={train_loss:6.4f} acc={train_acc:.4f}')
 
     write_metrics(train_writer, epoch,
-                  {'accuracy': acc,
-                   'loss': loss,
+                  {'accuracy': train_acc,
+                   'loss': train_loss,
                    'time/elapsed': dt,
-                   'time/xps': (config.train.steps * config.train.data.batch_size) / dt},
-                  hparams)
+                   'time/xps': (config.train.steps * config.train.data.batch_size) / dt})
+
 
     # Test
     if config.test.steps:
@@ -293,16 +297,25 @@ def main(argv):
 
       metrics = accumulate_metrics(test_metrics)
       dt = time.time() - t1
-      loss = jnp.asarray(metrics['loss'])
-      acc = jnp.asarray(metrics['accuracy'])
-      print(f'test/ {epoch:8d} {dt:6.1f}s loss={loss:6.4f} acc={acc:.4f}')
+      test_loss = jnp.asarray(metrics['loss'])
+      test_acc = jnp.asarray(metrics['accuracy'])
+      print(f'test/ {epoch:8d} {dt:6.1f}s loss={test_loss:6.4f} acc={test_acc:.4f}')
       write_metrics(test_writer, epoch,
-                    {'accuracy': acc,
-                     'loss': loss,
+                    {'accuracy': test_acc,
+                     'loss': test_loss,
                      'time/elapsed': dt,
                      'time/xps': (config.test.steps * config.test.data.batch_size) / dt
-                     },
-                    hparams)
+                     })
+
+
+    write_metrics(final_writer, config.epochs,
+                  {
+                    'train_accuracy': train_acc,
+                   'train_loss': train_loss,
+                    'test_accuracy': test_acc,
+                   'test_loss': test_loss,
+                   },
+                  hparams)
 
 
   if config.model_type == 'bias':
