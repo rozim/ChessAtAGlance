@@ -174,10 +174,10 @@ def main(argv):
   rng = jax.random.PRNGKey(int(time.time()))
   x = jnp.ones((1,) + CNN_SHAPE_3D)
   model = ChessCNN(**config.model)
+  with open('model-tabulate.txt', 'w') as f:
+    f.write(model.tabulate(rng, x, console_kwargs={'width': 120}))
   params = model.init(rng, x)
   jax.tree_map(lambda x: x.shape, params) # Check the parameters
-
-
 
   state = init_train_state(
     model,
