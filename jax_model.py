@@ -3,6 +3,7 @@ import os
 import sys
 import time
 from typing import Any, Dict
+import warnings
 
 from absl import app
 from absl import flags
@@ -12,6 +13,7 @@ import functools
 
 import jax
 import jax.numpy as jnp
+import numpy as np
 
 from flax import linen as nn
 from flax.training import train_state
@@ -84,14 +86,6 @@ def init_train_state(
 
 
 
-def train_and_evaluate(train_dataset, eval_dataset, test_dataset, state, epochs):
-  pass
-
-
-def compute_metrics(logits: jnp.ndarray,
-                    labels: jnp.ndarray) -> Any:
-  pass
-
 def compute_metrics(*, logits: jnp.ndarray, labels: jnp.ndarray) -> Dict[str, jnp.ndarray]:
   accuracy = jnp.mean(jnp.argmax(logits, -1) == labels)
   metrics = {
@@ -106,13 +100,12 @@ def train_step(
     x: jnp.ndarray,
     label: jnp.ndarray
 ):
-  def loss_fn(params):
+  def _loss_fn(params):
     logits = state.apply_fn({'params': params}, x)
     loss = optax.softmax_cross_entropy_with_integer_labels(logits=logits, labels=label)
     return loss.mean(), logits
 
-
-  gradient_fn = jax.value_and_grad(loss_fn, has_aux=True)
+  gradient_fn = jax.value_and_grad(_loss_fn, has_aux=True)
   (loss, logits), grads = gradient_fn(state.params)
   state = state.apply_gradients(grads=grads)
   metrics = compute_metrics(logits=logits, labels=label)
@@ -120,29 +113,36 @@ def train_step(
   return state, metrics
 
 
+@jax.jit
+def test_step(
+    state: train_state.TrainState,
+    x: jnp.ndarray,
+    label: jnp.ndarray
+):
+  logits = state.apply_fn({'params': state.params}, x)
+  loss = optax.softmax_cross_entropy_with_integer_labels(logits=logits, labels=label)
+  metrics = compute_metrics(logits=logits, labels=label)
+  metrics['loss'] = loss
+  return metrics
 
 
-def main(argv):
-  rng = jax.random.PRNGKey(0)
-  x = jnp.ones((1,) + CNN_SHAPE_3D)
-  model = ChessCNN(num_filters=64, num_blocks=1)
-  params = model.init(rng, x)
-  jax.tree_map(lambda x: x.shape, params) # Check the parameters
+def accumulate_metrics(metrics):
+  metrics = jax.device_get(metrics)
+  return {
+    k: np.mean([metric[k] for metric in metrics])
+    for k in metrics[0]
+  }
 
-  lr = 5e-3
-  batch_size = 1024
-  epochs = 1000
-  mod = 10
+def create_dataset(shuffle: int, batch_size: int, pat: str) -> tf.data.Dataset:
+  assert shuffle >= 0
+  assert batch_size > 0
+  assert pat
 
-  state = init_train_state(
-    model,
-    rng,
-    (batch_size,) + CNN_SHAPE_3D,
-    lr,
-  )
-  files = glob.glob('data/cnn-1m-?????-of-00010.recordio')
+  files = glob.glob(pat)
+  assert len(files) > 0, [pat, glob.glob(pat)]
   ds = tf.data.TFRecordDataset(files, 'ZLIB', num_parallel_reads=4)
-  ds = ds.shuffle(batch_size * 10)
+  if shuffle:
+    ds = ds.shuffle(shuffle)
   ds = ds.batch(batch_size, drop_remainder=True)
   ds = ds.repeat()
   # 'board', 'label'
@@ -150,18 +150,82 @@ def main(argv):
               num_parallel_calls=AUTOTUNE, deterministic=False)
   ds = ds.prefetch(AUTOTUNE)
   ds = ds.as_numpy_iterator()
-  #ds = ds.map(convert_to_jax)
-  ds_iter = iter(ds)
+  return ds
+
+
+def main(argv):
+  tf.compat.v1.logging.set_verbosity(tf.compat.v1.logging.ERROR)
+  logging.set_verbosity('error')
+  os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
+  warnings.filterwarnings('ignore', category=Warning)
+
+  rng = jax.random.PRNGKey(0)
+  x = jnp.ones((1,) + CNN_SHAPE_3D)
+  model = ChessCNN(num_filters=64, num_blocks=1)
+  params = model.init(rng, x)
+  jax.tree_map(lambda x: x.shape, params) # Check the parameters
+
+  config = config_dict.ConfigDict()
+  config.train = config_dict.ConfigDict()
+  config.train.data = config_dict.ConfigDict()
+  config.test = config_dict.ConfigDict()
+  config.test.data = config_dict.ConfigDict()
+
+  config.lr = 5e-3
+  config.batch_size = 1024
+  config.epochs = 1000
+
+  config.train.steps = 10
+  config.test.steps = 1
+
+  config.train.data.batch_size = config.get_ref('batch_size')
+  config.test.data.batch_size = config.get_ref('batch_size')
+
+  config.train.data.shuffle = 100 * config.get_ref('batch_size')
+  config.test.data.shuffle = 0
+
+  config.train.data.pat = 'data/cnn-1m-0000[0-8]-of-00010.recordio'
+  config.test.data.pat = 'data/cnn-1m-0000[9]-of-00010.recordio'
+
+  state = init_train_state(
+    model,
+    rng,
+    (config.batch_size,) + CNN_SHAPE_3D,
+    config.lr,
+  )
+
+  train_iter = iter(create_dataset(**config.train.data))
+  test_iter = iter(create_dataset(**config.test.data))
 
   t1 = time.time()
-  for i in range(epochs):
-    batch = next(ds_iter)
-    state, metrics = train_step(state, batch['board'], batch['label'])
-    if i % mod == 0:
+  for epoch in range(config.epochs):
+    # Train
+    train_metrics = []
+    for i in range(config.train.steps):
+      batch = next(train_iter)
+      state, metrics = train_step(state, batch['board'], batch['label'])
+      train_metrics.append(metrics)
+
+    metrics = accumulate_metrics(train_metrics)
+    dt = time.time() - t1
+    loss = jnp.asarray(metrics['loss'])
+    acc = jnp.asarray(metrics['accuracy'])
+    print(f'train/{epoch:8d} {dt:6.1f}s loss={loss:6.4f} acc={acc:.4f}')
+
+    # Test
+    if config.test.steps:
+      test_metrics = []
+      for i in range(config.test.steps):
+        batch = next(test_iter)
+        metrics = test_step(state, batch['board'], batch['label'])
+        test_metrics.append(metrics)
+
+      metrics = accumulate_metrics(test_metrics)
       dt = time.time() - t1
       loss = jnp.asarray(metrics['loss'])
       acc = jnp.asarray(metrics['accuracy'])
-      print(f'{i:8d} {dt:6.1f}s loss={loss:.4f} acc={acc:.4f}')
+      print(f'test/ {epoch:8d} {dt:6.1f}s loss={loss:6.4f} acc={acc:.4f}')
+
 
 
   print('OK')
