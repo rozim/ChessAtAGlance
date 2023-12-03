@@ -5,7 +5,7 @@ import sys, os
 
 from absl import app
 
-from encode import CNN_FEATURES
+from encode import CNN_FEATURES_FEN
 
 
 # def _parse_function(example_proto):
@@ -21,10 +21,11 @@ def main(argv):
   # print('flat: ', CNN_FLAT_SHAPE)
   ds = tf.data.TFRecordDataset(['foo.rio'], 'ZLIB')
   ds = ds.batch(1)
-  ds = ds.map(functools.partial(tf.io.parse_example, features=CNN_FEATURES))
+  ds = ds.map(functools.partial(tf.io.parse_example, features=CNN_FEATURES_FEN))
   for ent in iter(ds):
-    print(ent['board'])
-    print(ent['label'])
+    print('board', ent['board'])
+    print('label', ent['label'])
+    print('fen', ent['fen'])
     break
 
 
