@@ -147,6 +147,11 @@ CNN_FEATURES = {
   'board': tf.io.FixedLenFeature(CNN_SHAPE_3D, tf.float32),
   'label': tf.io.FixedLenFeature([], tf.int64)
 }
+CNN_FEATURES_FEN = {
+  'board': tf.io.FixedLenFeature(CNN_SHAPE_3D, tf.float32),
+  'label': tf.io.FixedLenFeature([], tf.int64),
+  'fen': tf.io.FixedLenFeature([], tf.string),
+}
 
 TRANSFORMER_FEATURES = {
   'board': tf.io.FixedLenFeature(TRANSFORMER_SHAPE, tf.int64),
