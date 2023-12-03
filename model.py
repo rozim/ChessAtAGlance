@@ -87,7 +87,7 @@ def create_simple_model(mplan):
   return Model(inputs=[board], outputs=y)
 
 
-def create_model(mplan):
+def create_cnn_model(mplan):
   if hasattr(mplan, 'l2'):
     kernel_regularizer = regularizers.l2(mplan.get('l2', 0.0))
   else:
@@ -163,7 +163,7 @@ def main(argv):
   from tensorflow.keras.callbacks import TerminateOnNaN, EarlyStopping, ModelCheckpoint, LambdaCallback, Callback
 
   plan = load_plan('config/cnn_105.toml')
-  model = create_model(mplan=plan.model)
+  model = create_cnn_model(mplan=plan.model)
   model.summary(expand_nested=True)
 
   ds = tf.data.TFRecordDataset(['foo.rio'], 'ZLIB')

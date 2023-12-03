@@ -26,7 +26,7 @@ from Mish.Mish.TFKeras import mish
 #
 
 from data import create_dataset, split_dataset
-from model import create_model
+from model import create_cnn_model
 from model import create_bias_only_model
 from model import create_simple_model
 from model_transformer import create_transformer_model
@@ -117,7 +117,7 @@ def main(argv):
   elif mplan.type == 'simple':
     model = create_simple_model(mplan)
   elif mplan.type == 'cnn':
-    model = create_model(mplan)
+    model = create_cnn_model(mplan)
   elif mplan.type == 'transformer':
     model = create_transformer_model(mplan)
 

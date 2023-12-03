@@ -28,7 +28,7 @@ from tensorflow.keras.losses import SparseCategoricalCrossentropy
 from tensorflow.python.keras import backend as K
 
 from data import create_dataset, split_dataset
-from model import create_model
+from model import create_cnn_model
 from plan import load_plan
 from lr import  create_warm_schedule, create_poly_schedule
 from train_util import df_to_csv, create_log_dir, clip_gradients
@@ -145,7 +145,7 @@ def main(argv):
           optimizer_extra['gradient_transformers'] = [clip_gradients(tplan['max_gradient'])]
 
       lr = create_poly_schedule(tplan)
-      m = create_model(mplan)
+      m = create_cnn_model(mplan)
 
       m.compile(optimizer=tf.keras.optimizers.legacy.Adam(learning_rate=lr,
                                                           beta_1=tplan.adam_beta_1,
