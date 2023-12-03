@@ -310,10 +310,10 @@ def main(argv):
 
     write_metrics(final_writer, config.epochs,
                   {
-                    'train_accuracy': train_acc,
-                   'train_loss': train_loss,
-                    'test_accuracy': test_acc,
-                   'test_loss': test_loss,
+                    'train/accuracy': train_acc,
+                   'train/loss': train_loss,
+                    'test/accuracy': test_acc,
+                   'test/loss': test_loss,
                    },
                   hparams)
 

@@ -4,6 +4,7 @@ i=0
 
 rm -rf /tmp/logdir
 mkdir -p /tmp/logdir
+epochs=5
 
 for lr in 1e-1 1e-2 1e-3 1e-4 1e-5 1e-6 5e-1 5e-2 5e-3 5e-4 5e-5 5e-6; do
     ((i++))
@@ -15,7 +16,7 @@ for lr in 1e-1 1e-2 1e-3 1e-4 1e-5 1e-6 5e-1 5e-2 5e-3 5e-4 5e-5 5e-6; do
 	   --config.model.num_blocks=1 \
 	   --config.model.num_filters=64  \
 	   --config.model.num_top=0 \
-	   --config.epochs=25  \
+	   --config.epochs=${epochs}  \
 	   --logdir=${logdir} \
 	   --config.lr=${lr} > ${logdir}/out.txt 2> ${logdir}/err.txt
 done
