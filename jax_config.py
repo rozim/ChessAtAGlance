@@ -14,7 +14,6 @@ def get_config() -> config_dict.ConfigDict:
 
   config.model = config_dict.ConfigDict()
 
-  config.lr = 5e-3
   config.batch_size = 1024
   config.epochs = 100
 
@@ -22,6 +21,9 @@ def get_config() -> config_dict.ConfigDict:
   # train: 900k
   # batch=1024 epochs=878.90625
   # train_steps=10, 87 = 1 pass
+
+  config.train.optimizer = 'adam'
+  config.train.lr = 5e-3
 
   config.train.steps = 10
   config.test.steps = 5
@@ -41,6 +43,8 @@ def get_config() -> config_dict.ConfigDict:
 
   config.model.num_top = 1
   config.model.top_width = 1024
+
+  config.model.activation = 'relu'
 
   return config
 

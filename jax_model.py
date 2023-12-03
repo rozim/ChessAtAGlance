@@ -37,6 +37,45 @@ LOGDIR = flags.DEFINE_string('logdir', '/tmp/logdir', '')
 
 START = int(time.time())
 
+ACTIVATIONS = {
+  'celu': nn.celu,
+  'elu': nn.elu,
+  'gelu': nn.gelu,
+  'glu': nn.glu,
+  'hard_sigmoid': nn.hard_sigmoid,
+  'hard_silu': nn.hard_silu,
+  'relu': nn.relu,
+  'relu6': nn.relu6,
+  'selu': nn.selu,
+  'sigmoid': nn.sigmoid,
+  'silu': nn.silu,
+  'soft_sign': nn.soft_sign,
+  'softplus': nn.softplus,
+}
+
+OPTIMIZERS = {
+  'adabelief': optax.adabelief,
+  'adagrad': optax.adagrad,
+  'adam': optax.adam,
+  'adamax': optax.adamax,
+  'adamaxw': optax.adamaxw,
+  'adamw': optax.adamw,
+  'amsgrad': optax.amsgrad,
+  'dpsgd': optax.dpsgd,
+  'fromage': optax.fromage,
+  'lamb': optax.lamb,
+  'lars': optax.lars,
+  'lion': optax.lion,
+  'noisy_sgd': optax.noisy_sgd,
+  'novograd': optax.novograd,
+  'optimistic_gradient_descent': optax.optimistic_gradient_descent,
+  'radam': optax.radam,
+  'rmsprop': optax.rmsprop,
+  'sgd': optax.sgd,
+  'sm3': optax.sm3,
+  'yogi': optax.yogi,
+}
+
 
 class BiasOnlyDense(nn.Module):
   features: int
@@ -61,9 +100,12 @@ class ChessCNN(nn.Module):
   num_blocks: int
   num_top: int
   top_width: int
+  activation: str
 
   @nn.compact
   def __call__(self, x):
+
+    f_act = ACTIVATIONS[self.activation]
     if self.num_blocks:
       # 3d: NDHWC
       # in: 1, 16, 8, 8
@@ -82,12 +124,12 @@ class ChessCNN(nn.Module):
 
         x = nn.Conv(features=self.num_filters, kernel_size=(3, 3), padding='SAME')(x)
         x = nn.LayerNorm()(x)
-        x = nn.relu(x)
+        x = f_act(x)
 
         x = nn.Conv(features=self.num_filters, kernel_size=(3, 3), padding='SAME')(x)
         x = nn.LayerNorm()(x)
         x = x + skip
-        x = nn.relu(x)
+        x = f_act(x)
 
     x = x.reshape((x.shape[0], -1))  # flatten
 
@@ -95,7 +137,7 @@ class ChessCNN(nn.Module):
       for d in range(self.num_top):
         x = nn.Dense(self.top_width)(x)
         x = nn.LayerNorm()(x)
-        x = nn.relu(x)
+        x = f_act(x)
 
     # Prediction head
     logits = nn.Dense(NUM_CLASSES, use_bias=False)(x)
@@ -106,12 +148,14 @@ class ChessCNN(nn.Module):
 
 
 def init_train_state(
-    model, random_key, shape, learning_rate
+    model, f_optimizer, random_key, shape, learning_rate
 ) -> train_state.TrainState:
   # Initialize the Model
   variables = model.init(random_key, jnp.ones(shape))
+
   # Create the optimizer
-  optimizer = optax.adam(learning_rate)
+  optimizer = f_optimizer(learning_rate)
+
   # Create a State
   return train_state.TrainState.create(
     apply_fn=model.apply,
@@ -239,9 +283,10 @@ def main(argv):
 
   state = init_train_state(
     model,
+    OPTIMIZERS[config.train.optimizer],
     rng,
     (config.batch_size,) + CNN_SHAPE_3D,
-    config.lr,
+    config.train.lr,
   )
 
   train_iter = iter(create_dataset(**config.train.data))
@@ -256,12 +301,13 @@ def main(argv):
 
   hparams = {
     'start': (START - 1701632426),
-    'optimizer': 'adam',
-    'lr': config.lr,
+    'lr': config.train.lr,
     'num_blocks': config.model.num_blocks,
     'num_filters': config.model.num_filters,
     'num_top': config.model.num_top,
     'top_width': config.model.top_width,
+    'activation': config.model.activation,
+    'optimizer': config.train.optimizer,
   }
 
   for epoch in range(config.epochs):
