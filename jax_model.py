@@ -40,28 +40,30 @@ class ChessCNN(nn.Module):
 
   @nn.compact
   def __call__(self, x):
-    # 3d: NDHWC
-    # in: 1, 16, 8, 8
-    # in: N  C   H  W
-    #     0  1   2  3
-    # out:
-    #     N  H   W  C
-    x = jnp.transpose(x, [0, 2, 3, 1])
+    if self.num_blocks:
+      # 3d: NDHWC
+      # in: 1, 16, 8, 8
+      # in: N  C   H  W
+      #     0  1   2  3
+      # out:
+      #     N  H   W  C
+      x = jnp.transpose(x, [0, 2, 3, 1])
 
-    # Set up so skip conn works.
-    x = nn.Conv(features=self.num_filters, kernel_size=(3, 3), padding='SAME')(x)
 
-    for layer in range(self.num_blocks):
-      skip = x
-
+      # Set up so skip conn works.
       x = nn.Conv(features=self.num_filters, kernel_size=(3, 3), padding='SAME')(x)
-      x = nn.LayerNorm()(x)
-      x = nn.relu(x)
 
-      x = nn.Conv(features=self.num_filters, kernel_size=(3, 3), padding='SAME')(x)
-      x = nn.LayerNorm()(x)
-      x = x + skip
-      x = nn.relu(x)
+      for layer in range(self.num_blocks):
+        skip = x
+
+        x = nn.Conv(features=self.num_filters, kernel_size=(3, 3), padding='SAME')(x)
+        x = nn.LayerNorm()(x)
+        x = nn.relu(x)
+
+        x = nn.Conv(features=self.num_filters, kernel_size=(3, 3), padding='SAME')(x)
+        x = nn.LayerNorm()(x)
+        x = x + skip
+        x = nn.relu(x)
 
     x = x.reshape((x.shape[0], -1))  # flatten
 
@@ -72,7 +74,7 @@ class ChessCNN(nn.Module):
         x = nn.relu(x)
 
     # Prediction head
-    logits = nn.Dense(NUM_CLASSES)(x)
+    logits = nn.Dense(NUM_CLASSES, use_bias=False)(x)
     return logits
     # move_probabilities = nn.softmax(move_logits)
     # return move_probabilities, value
@@ -174,9 +176,16 @@ def main(argv):
   rng = jax.random.PRNGKey(int(time.time()))
   x = jnp.ones((1,) + CNN_SHAPE_3D)
   model = ChessCNN(**config.model)
+
+  params = model.init(rng, x)
   with open('model-tabulate.txt', 'w') as f:
     f.write(model.tabulate(rng, x, console_kwargs={'width': 120}))
-  params = model.init(rng, x)
+    flattened, _ = jax.tree_util.tree_flatten_with_path(params)
+    for key_path, value in flattened:
+      f.write(f'{jax.tree_util.keystr(key_path):40s} {str(value.shape):20s} {str(value.dtype):10s}\n')
+
+  #print("P", params['params']['Dense_0'].keys())
+
   jax.tree_map(lambda x: x.shape, params) # Check the parameters
 
   state = init_train_state(
@@ -217,7 +226,6 @@ def main(argv):
       loss = jnp.asarray(metrics['loss'])
       acc = jnp.asarray(metrics['accuracy'])
       print(f'test/ {epoch:8d} {dt:6.1f}s loss={loss:6.4f} acc={acc:.4f}')
-
 
 
   print('OK')
