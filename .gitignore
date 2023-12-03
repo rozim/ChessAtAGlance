@@ -58,3 +58,5 @@ tf_utils_callbacks/
 bazel-*
 foo
 shh
+*.shh
+foo.*
