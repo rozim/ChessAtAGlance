@@ -19,6 +19,7 @@ from flax import linen as nn
 from flax.training import train_state
 
 import tensorflow as tf
+from tensorboard.plugins.hparams import api as hp
 
 from ml_collections import config_dict
 from ml_collections import config_flags
@@ -33,6 +34,9 @@ AUTOTUNE = tf.data.AUTOTUNE
 CONFIG = config_flags.DEFINE_config_file('config', 'config.py')
 
 LOGDIR = flags.DEFINE_string('logdir', '/tmp/logdir', '')
+
+START = int(time.time())
+
 
 class BiasOnlyDense(nn.Module):
   features: int
@@ -186,10 +190,13 @@ def create_dataset(shuffle: int, batch_size: int, pat: str) -> tf.data.Dataset:
 
 def write_metrics(writer: tf.summary.SummaryWriter,
                   step: int,
-                  metrics: Any) -> None:
+                  metrics: Any,
+                  hparams: Any = None) -> None:
   with writer.as_default(step):
     for k, v in metrics.items():
       tf.summary.scalar(k, v)
+    if hparams:
+      hp.hparams(hparams)
   writer.flush()
 
 
@@ -203,7 +210,10 @@ def main(argv):
   config = CONFIG.value
   assert config.model_type in ['cnn', 'bias']
 
-  os.mkdir(LOGDIR.value)
+  try:
+    os.mkdir(LOGDIR.value)
+  except:
+    pass
 
 
   with open(os.path.join(LOGDIR.value, 'config.txt'), 'w') as f:
@@ -242,6 +252,13 @@ def main(argv):
   test_writer = tf.summary.create_file_writer(
     os.path.join(LOGDIR.value, 'test'))
 
+  hparams = {
+    'start': START,
+    'optimizer': 'adam',
+    'lr': config.lr,
+    'num_blocks': config.model.num_blocks,
+    'num_filters': config.model.num_filters,
+  }
 
   for epoch in range(config.epochs):
     t1 = time.time()
@@ -262,7 +279,8 @@ def main(argv):
                   {'accuracy': acc,
                    'loss': loss,
                    'time/elapsed': dt,
-                   'time/xps': (config.train.steps * config.train.data.batch_size) / dt})
+                   'time/xps': (config.train.steps * config.train.data.batch_size) / dt},
+                  hparams)
 
     # Test
     if config.test.steps:
@@ -283,7 +301,8 @@ def main(argv):
                      'loss': loss,
                      'time/elapsed': dt,
                      'time/xps': (config.test.steps * config.test.data.batch_size) / dt
-                     })
+                     },
+                    hparams)
 
 
   if config.model_type == 'bias':
