@@ -35,6 +35,8 @@ CONFIG = config_flags.DEFINE_config_file('config', 'config.py')
 class ChessCNN(nn.Module):
   num_filters: int
   num_blocks: int
+  num_top: int
+  top_width: int
 
   @nn.compact
   def __call__(self, x):
@@ -61,8 +63,13 @@ class ChessCNN(nn.Module):
       x = x + skip
       x = nn.relu(x)
 
-
     x = x.reshape((x.shape[0], -1))  # flatten
+
+    if self.num_top:
+      for d in range(self.num_top):
+        x = nn.Dense(self.top_width)(x)
+        x = nn.LayerNorm()(x)
+        x = nn.relu(x)
 
     # Prediction head
     logits = nn.Dense(NUM_CLASSES)(x)
@@ -161,14 +168,16 @@ def main(argv):
   os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
   warnings.filterwarnings('ignore', category=Warning)
 
-  rng = jax.random.PRNGKey(0)
+  config = CONFIG.value
+  print(config)
+
+  rng = jax.random.PRNGKey(int(time.time()))
   x = jnp.ones((1,) + CNN_SHAPE_3D)
-  model = ChessCNN(num_filters=64, num_blocks=1)
+  model = ChessCNN(**config.model)
   params = model.init(rng, x)
   jax.tree_map(lambda x: x.shape, params) # Check the parameters
 
-  config = CONFIG.value
-  print(config)
+
 
   state = init_train_state(
     model,
