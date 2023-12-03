@@ -30,6 +30,7 @@ def get_config() -> config_dict.ConfigDict:
   config.train.data.pat = 'data/cnn-1m-0000[0-8]-of-00010.recordio'
   config.test.data.pat = 'data/cnn-1m-0000[9]-of-00010.recordio'
 
+  config.model_type = 'cnn' # 'bias'
   config.model.num_blocks = 1
   config.model.num_filters = 64
 

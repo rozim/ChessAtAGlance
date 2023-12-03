@@ -2,7 +2,7 @@ import glob
 import os
 import sys
 import time
-from typing import Any, Dict
+from typing import Any, Callable, Dict
 import warnings
 
 from absl import app
@@ -31,6 +31,24 @@ from encode import CNN_FEATURES, CNN_SHAPE_3D, NUM_CLASSES
 AUTOTUNE = tf.data.AUTOTUNE
 
 CONFIG = config_flags.DEFINE_config_file('config', 'config.py')
+
+class BiasOnlyDense(nn.Module):
+  features: int
+  param_dtype: nn.linear.Dtype = jnp.float32
+  bias_init: Callable[
+    [nn.linear.PRNGKey, nn.linear.Shape, nn.linear.Dtype], nn.linear.Array
+  ] = nn.initializers.zeros_init()
+
+  @nn.compact
+  def __call__(self, inputs: nn.linear.Array) -> nn.linear.Array:
+    bias = self.param(
+        'bias', self.bias_init, (self.features,), self.param_dtype
+    )
+    return jnp.reshape(bias, (1, -1))
+
+  #y = inputs
+  #return jnp.reshape(bias, (1,) * (y.ndim - 1) + (-1,))
+
 
 class ChessCNN(nn.Module):
   num_filters: int
@@ -173,9 +191,15 @@ def main(argv):
   config = CONFIG.value
   print(config)
 
+  assert config.model_type in ['cnn', 'bias']
+
   rng = jax.random.PRNGKey(int(time.time()))
   x = jnp.ones((1,) + CNN_SHAPE_3D)
-  model = ChessCNN(**config.model)
+
+  if config.model_type == 'cnn':
+    model = ChessCNN(**config.model)
+  elif config.model_type == 'bias':
+    model = BiasOnlyDense(NUM_CLASSES)
 
   params = model.init(rng, x)
   with open('model-tabulate.txt', 'w') as f:
@@ -184,9 +208,8 @@ def main(argv):
     for key_path, value in flattened:
       f.write(f'{jax.tree_util.keystr(key_path):40s} {str(value.shape):20s} {str(value.dtype):10s}\n')
 
-  #print("P", params['params']['Dense_0'].keys())
-
   jax.tree_map(lambda x: x.shape, params) # Check the parameters
+  del params
 
   state = init_train_state(
     model,
@@ -228,7 +251,15 @@ def main(argv):
       print(f'test/ {epoch:8d} {dt:6.1f}s loss={loss:6.4f} acc={acc:.4f}')
 
 
-  print('OK')
+  if config.model_type == 'bias':
+    from encode_move import INDEX_TO_MOVE
+    with open('bias.txt', 'w') as f:
+      soft = jax.nn.softmax(state.params['bias'])
+      besti = jnp.argmax(soft, -1)
+      for i, foo in enumerate(soft.tolist()):
+        f.write(f'{i:4d} {INDEX_TO_MOVE[i]:6s} {100.0*foo:6.4f}\n')
+
+
 
 if __name__ == "__main__":
   app.run(main)
