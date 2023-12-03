@@ -32,6 +32,8 @@ AUTOTUNE = tf.data.AUTOTUNE
 
 CONFIG = config_flags.DEFINE_config_file('config', 'config.py')
 
+LOGDIR = flags.DEFINE_string('logdir', '/tmp/logdir', '')
+
 class BiasOnlyDense(nn.Module):
   features: int
   param_dtype: nn.linear.Dtype = jnp.float32
@@ -182,6 +184,16 @@ def create_dataset(shuffle: int, batch_size: int, pat: str) -> tf.data.Dataset:
   return ds
 
 
+def write_metrics(writer: tf.summary.SummaryWriter,
+                  step: int,
+                  metrics: Any) -> None:
+  with writer.as_default(step):
+    for k, v in metrics.items():
+      tf.summary.scalar(k, v)
+  writer.flush()
+
+
+
 def main(argv):
   tf.compat.v1.logging.set_verbosity(tf.compat.v1.logging.ERROR)
   logging.set_verbosity('error')
@@ -189,9 +201,13 @@ def main(argv):
   warnings.filterwarnings('ignore', category=Warning)
 
   config = CONFIG.value
-  print(config)
-
   assert config.model_type in ['cnn', 'bias']
+
+  os.mkdir(LOGDIR.value)
+
+
+  with open(os.path.join(LOGDIR.value, 'config.txt'), 'w') as f:
+            f.write(str(config))
 
   rng = jax.random.PRNGKey(int(time.time()))
   x = jnp.ones((1,) + CNN_SHAPE_3D)
@@ -202,7 +218,7 @@ def main(argv):
     model = BiasOnlyDense(NUM_CLASSES)
 
   params = model.init(rng, x)
-  with open('model-tabulate.txt', 'w') as f:
+  with open(os.path.join(LOGDIR.value, 'model-tabulate.txt'), 'w') as f:
     f.write(model.tabulate(rng, x, console_kwargs={'width': 120}))
     flattened, _ = jax.tree_util.tree_flatten_with_path(params)
     for key_path, value in flattened:
@@ -221,8 +237,14 @@ def main(argv):
   train_iter = iter(create_dataset(**config.train.data))
   test_iter = iter(create_dataset(**config.test.data))
 
-  t1 = time.time()
+  train_writer = tf.summary.create_file_writer(
+    os.path.join(LOGDIR.value, 'train'))
+  test_writer = tf.summary.create_file_writer(
+    os.path.join(LOGDIR.value, 'test'))
+
+
   for epoch in range(config.epochs):
+    t1 = time.time()
     # Train
     train_metrics = []
     for i in range(config.train.steps):
@@ -236,8 +258,15 @@ def main(argv):
     acc = jnp.asarray(metrics['accuracy'])
     print(f'train/{epoch:8d} {dt:6.1f}s loss={loss:6.4f} acc={acc:.4f}')
 
+    write_metrics(train_writer, epoch,
+                  {'accuracy': acc,
+                   'loss': loss,
+                   'time/elapsed': dt,
+                   'time/xps': (config.train.steps * config.train.data.batch_size) / dt})
+
     # Test
     if config.test.steps:
+      t1 = time.time()
       test_metrics = []
       for i in range(config.test.steps):
         batch = next(test_iter)
@@ -249,11 +278,17 @@ def main(argv):
       loss = jnp.asarray(metrics['loss'])
       acc = jnp.asarray(metrics['accuracy'])
       print(f'test/ {epoch:8d} {dt:6.1f}s loss={loss:6.4f} acc={acc:.4f}')
+      write_metrics(test_writer, epoch,
+                    {'accuracy': acc,
+                     'loss': loss,
+                     'time/elapsed': dt,
+                     'time/xps': (config.test.steps * config.test.data.batch_size) / dt
+                     })
 
 
   if config.model_type == 'bias':
     from encode_move import INDEX_TO_MOVE
-    with open('bias.txt', 'w') as f:
+    with open(os.path.join(LOGDIR.value, 'bias.txt'), 'w') as f:
       soft = jax.nn.softmax(state.params['bias'])
       besti = jnp.argmax(soft, -1)
       for i, foo in enumerate(soft.tolist()):

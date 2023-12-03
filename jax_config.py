@@ -16,7 +16,12 @@ def get_config() -> config_dict.ConfigDict:
 
   config.lr = 5e-3
   config.batch_size = 1024
-  config.epochs = 1000
+  config.epochs = 100
+
+  # 1M
+  # train: 900k
+  # batch=1024 epochs=878.90625
+  # train_steps=10, 87 = 1 pass
 
   config.train.steps = 10
   config.test.steps = 5
