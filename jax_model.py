@@ -30,7 +30,7 @@ AUTOTUNE = tf.data.AUTOTUNE
 
 class ChessCNN(nn.Module):
   num_filters: int
-  num_layers: int
+  num_blocks: int
 
   @nn.compact
   def __call__(self, x):
@@ -41,9 +41,23 @@ class ChessCNN(nn.Module):
     # out:
     #     N  H   W  C
     x = jnp.transpose(x, [0, 2, 3, 1])
-    for layer in range(self.num_layers):
+
+    # Set up so skip conn works.
+    x = nn.Conv(features=self.num_filters, kernel_size=(3, 3), padding='SAME')(x)
+
+    for layer in range(self.num_blocks):
+      skip = x
+
       x = nn.Conv(features=self.num_filters, kernel_size=(3, 3), padding='SAME')(x)
+      x = nn.LayerNorm()(x)
       x = nn.relu(x)
+
+      x = nn.Conv(features=self.num_filters, kernel_size=(3, 3), padding='SAME')(x)
+      x = nn.LayerNorm()(x)
+      x = x + skip
+      x = nn.relu(x)
+
+
     x = x.reshape((x.shape[0], -1))  # flatten
 
     # Prediction head
@@ -111,7 +125,7 @@ def train_step(
 def main(argv):
   rng = jax.random.PRNGKey(0)
   x = jnp.ones((1,) + CNN_SHAPE_3D)
-  model = ChessCNN(num_filters=64, num_layers=1)
+  model = ChessCNN(num_filters=64, num_blocks=1)
   params = model.init(rng, x)
   jax.tree_map(lambda x: x.shape, params) # Check the parameters
 
@@ -150,13 +164,7 @@ def main(argv):
       print(f'{i:8d} {dt:6.1f}s loss={loss:.4f} acc={acc:.4f}')
 
 
-
-  # print(next(ds_iter))
-  # return
-  # for ent in iter(ds):
-  #   print(ent)
-  #   break
-  #   #print(model.apply(ent['board']))
   print('OK')
+
 if __name__ == "__main__":
   app.run(main)
