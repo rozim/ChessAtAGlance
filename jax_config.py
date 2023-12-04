@@ -14,6 +14,9 @@ def get_config() -> config_dict.ConfigDict:
 
   config.model = config_dict.ConfigDict()
 
+  config.optimizer = config_dict.ConfigDict()
+  config.optimizer.lion = config_dict.ConfigDict()
+
   config.batch_size = 1024
   config.epochs = 100
 
@@ -45,6 +48,11 @@ def get_config() -> config_dict.ConfigDict:
   config.model.top_width = 1024
 
   config.model.activation = 'relu'
+
+  config.optimizer.lion.b1 = 0.9
+  config.optimizer.lion.b2 = 0.99
+  config.optimizer.lion.weight_decay = 1e-3
+  config.optimizer.lion.learning_rate = config.train.get_ref('lr')
 
   return config
 

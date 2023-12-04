@@ -148,13 +148,10 @@ class ChessCNN(nn.Module):
 
 
 def init_train_state(
-    model, f_optimizer, random_key, shape, learning_rate
+    model, optimizer, random_key, shape
 ) -> train_state.TrainState:
   # Initialize the Model
   variables = model.init(random_key, jnp.ones(shape))
-
-  # Create the optimizer
-  optimizer = f_optimizer(learning_rate)
 
   # Create a State
   return train_state.TrainState.create(
@@ -281,12 +278,16 @@ def main(argv):
   jax.tree_map(lambda x: x.shape, params) # Check the parameters
   del params
 
+  if config.train.optimizer == 'lion':
+    optimizer = OPTIMIZERS[config.train.optimizer](**config.optimizer.lion)
+    print("LION: ", optimizer)
+  else:
+    optimizer = OPTIMIZERS[config.train.optimizer](config.train.lr),
   state = init_train_state(
     model,
-    OPTIMIZERS[config.train.optimizer],
+    optimizer,
     rng,
     (config.batch_size,) + CNN_SHAPE_3D,
-    config.train.lr,
   )
 
   train_iter = iter(create_dataset(**config.train.data))
@@ -309,6 +310,11 @@ def main(argv):
     'activation': config.model.activation,
     'optimizer': config.train.optimizer,
   }
+  if config.train.optimizer == 'lion':
+    hparams['lion.b1'] = config.optimizer.lion.b1
+    hparams['lion.b2'] = config.optimizer.lion.b2
+    hparams['lion.weight_decay'] = config.optimizer.lion.weight_decay
+
 
   for epoch in range(config.epochs):
     t1 = time.time()
