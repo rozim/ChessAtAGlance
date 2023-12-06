@@ -74,7 +74,7 @@ def main(argv):
       if row % 50000 == 0:
         dt = time.time() - t0
         print(f'{dt:.1f}s {row}')
-      fen, uci, san = line.strip().split(',')
+      fen, uci, san = line.strip().split(',')[0:3]  # Ignore possible SF score.
       n_gen += 1
       enc_board, enc_move = encode_cnn_board_move_wtm(chess.Board(fen), chess.Move.from_uci(uci))
       feature = {
