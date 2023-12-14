@@ -25,8 +25,8 @@ def get_config() -> config_dict.ConfigDict:
   # batch=1024 epochs=878.90625
   # train_steps=10, 87 = 1 pass
 
-  config.train.optimizer = 'adam'
-  config.train.lr = 5e-3
+  config.train.optimizer = 'lion'
+  config.train.lr = 6e-4
 
   config.train.steps = 10
   config.test.steps = 5
@@ -44,14 +44,14 @@ def get_config() -> config_dict.ConfigDict:
   config.model.num_blocks = 1
   config.model.num_filters = 64
 
-  config.model.num_top = 1
+  config.model.num_top = 0
   config.model.top_width = 1024
 
-  config.model.activation = 'relu'
+  config.model.activation = 'glu'
 
   config.optimizer.lion.b1 = 0.9
   config.optimizer.lion.b2 = 0.99
-  config.optimizer.lion.weight_decay = 1e-3
+  config.optimizer.lion.weight_decay = 1e-4 # better than def 1e-3
   config.optimizer.lion.learning_rate = config.train.get_ref('lr')
 
   return config
