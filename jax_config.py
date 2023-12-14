@@ -47,7 +47,7 @@ def get_config() -> config_dict.ConfigDict:
   config.model.num_top = 0
   config.model.top_width = 1024
 
-  config.model.activation = 'glu'
+  config.model.activation = 'relu6'
 
   config.optimizer.lion.b1 = 0.9
   config.optimizer.lion.b2 = 0.99
