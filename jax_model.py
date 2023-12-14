@@ -17,6 +17,7 @@ import numpy as np
 
 from flax import linen as nn
 from flax.training import train_state
+from flax.training import orbax_utils
 
 import tensorflow as tf
 from tensorboard.plugins.hparams import api as hp
@@ -24,6 +25,7 @@ from tensorboard.plugins.hparams import api as hp
 from ml_collections import config_dict
 from ml_collections import config_flags
 
+import orbax
 import optax
 
 from encode import CNN_FEATURES, CNN_SHAPE_3D, NUM_CLASSES
@@ -31,9 +33,10 @@ from encode import CNN_FEATURES, CNN_SHAPE_3D, NUM_CLASSES
 
 AUTOTUNE = tf.data.AUTOTUNE
 
-CONFIG = config_flags.DEFINE_config_file('config', 'config.py')
+CONFIG = config_flags.DEFINE_config_file('config', 'jax_config.py')
 
 LOGDIR = flags.DEFINE_string('logdir', '/tmp/logdir', '')
+MODE = flags.DEFINE_enum('mode', 'train', ['train', 'demo'], '')
 
 START = int(time.time())
 
@@ -115,7 +118,6 @@ class ChessCNN(nn.Module):
       #     N  H   W  C
       x = jnp.transpose(x, [0, 2, 3, 1])
 
-
       # Set up so skip conn works.
       x = nn.Conv(features=self.num_filters, kernel_size=(3, 3), padding='SAME')(x)
 
@@ -129,6 +131,7 @@ class ChessCNN(nn.Module):
         x = nn.Conv(features=self.num_filters, kernel_size=(3, 3), padding='SAME')(x)
         x = nn.LayerNorm()(x)
         x = x + skip
+
         x = f_act(x)
 
     x = x.reshape((x.shape[0], -1))  # flatten
@@ -241,6 +244,23 @@ def write_metrics(writer: tf.summary.SummaryWriter,
   writer.flush()
 
 
+def demo(model, rng, x):
+  params = model.init(rng, x)
+  print('PARAMS/1=', params.keys())
+  print('PARAMS/2=', params['params'].keys())
+  #params = params.update(raw)
+  print('INFER/1=', model.apply({'params': params['params']}, x))
+
+  orbax_checkpointer = orbax.checkpoint.PyTreeCheckpointer()
+  raw = orbax_checkpointer.restore(os.path.join(LOGDIR.value, 'final_checkpoint'))
+  config = raw['config']
+  model_params = raw['model']
+  print('RAW=', raw.keys())
+  print('MODEL/1=', model_params.keys())
+  print('MODEL/2=', model_params['params'].keys())
+  print('INFER/2=', model.apply({'params': model_params['params']}, x))
+
+
 
 def main(argv):
   tf.compat.v1.logging.set_verbosity(tf.compat.v1.logging.ERROR)
@@ -256,7 +276,6 @@ def main(argv):
   except:
     pass
 
-
   with open(os.path.join(LOGDIR.value, 'config.txt'), 'w') as f:
             f.write(str(config))
 
@@ -267,6 +286,10 @@ def main(argv):
     model = ChessCNN(**config.model)
   elif config.model_type == 'bias':
     model = BiasOnlyDense(NUM_CLASSES)
+
+  if MODE.value == 'demo':
+    demo(model, rng, x)
+    sys.exit(0)
 
   params = model.init(rng, x)
   with open(os.path.join(LOGDIR.value, 'model-tabulate.txt'), 'w') as f:
@@ -280,9 +303,8 @@ def main(argv):
 
   if config.train.optimizer == 'lion':
     optimizer = OPTIMIZERS[config.train.optimizer](**config.optimizer.lion)
-    print("LION: ", optimizer)
   else:
-    optimizer = OPTIMIZERS[config.train.optimizer](config.train.lr),
+    optimizer = OPTIMIZERS[config.train.optimizer](config.train.lr)
   state = init_train_state(
     model,
     optimizer,
@@ -359,7 +381,7 @@ def main(argv):
                      'time/xps': (config.test.steps * config.test.data.batch_size) / dt
                      })
 
-
+    # End of loop
     write_metrics(final_writer, config.epochs,
                   {
                     'train/accuracy': train_acc,
@@ -369,7 +391,14 @@ def main(argv):
                    },
                   hparams)
 
+  if True:
+    ckpt = {'model': state, 'config': config}
+    orbax_checkpointer = orbax.checkpoint.PyTreeCheckpointer()
+    save_args = orbax_utils.save_args_from_target(ckpt)
+    orbax_checkpointer.save(os.path.join(LOGDIR.value, 'final_checkpoint'), ckpt, save_args=save_args)
 
+
+  # special case
   if config.model_type == 'bias':
     from encode_move import INDEX_TO_MOVE
     with open(os.path.join(LOGDIR.value, 'bias.txt'), 'w') as f:
