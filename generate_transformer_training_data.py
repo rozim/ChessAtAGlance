@@ -13,10 +13,10 @@
 # Algorithm:
 #
 #
-#
+
 import glob
+import json
 import os, sys
-import pickle
 import random
 import time
 import zlib
@@ -53,12 +53,12 @@ def shuffled(ar):
   return ar
 
 
-def my_encode(obj):
-  return zlib.compress(pickle.dumps(obj, pickle.HIGHEST_PROTOCOL))
+def my_json_encode(obj):
+  return zlib.compress(json.dumps(obj).encode('utf-8'))
 
 
-def my_decode(obj):
-  return pickle.loads(zlib.decompress(bytes(obj)))
+def my_json_decode(obj):
+  return json.loads(zlib.decompress(bytes(obj)))o
 
 
 def main(argv):
@@ -85,8 +85,8 @@ def main(argv):
     dbio = sqlitedict.open(FLAGS.sqlite_out,
                            flag='c',
                            timeout=60,
-                           encode=my_encode,
-                           decode=my_decode)
+                           encode=my_json_encode,
+                           decode=my_json_decode)
 
   already = set()
   n_game, n_move, n_gen, n_dup = 0, 0, 0, 0
@@ -108,7 +108,7 @@ def main(argv):
         fen = simplify_fen(board)
         uci = move.uci()
         key = hash(fen + uci)
-        if key in already:
+        if key in already:  # Duplicate (pos,move) tuple.
           n_dup += 1
           continue
         already.add(key)
@@ -119,18 +119,24 @@ def main(argv):
           already = set()
 
         enc_board, enc_move = encode_transformer_board_move_wtm(board, move)
-        feature = {
-          'board': int64_feature_alt(enc_board),
-          'label': int64_feature(enc_move),
-          'fen':  bytes_feature(fen.encode('utf-8')),
-        }
-        pb = tf.train.Example(features=tf.train.Features(feature=feature))
-        if rio is not None:
+
+        if rio is not None:  # Write to random shard and use PB.
+          feature = {
+            'board': int64_feature_alt(enc_board),
+            'label': int64_feature(enc_move),
+            'fen':  bytes_feature(fen.encode('utf-8')),
+          }
+          pb = tf.train.Example(features=tf.train.Features(feature=feature))
           rio[random.randint(0, FLAGS.shards-1)].write(pb.SerializeToString())
-        if dbio is not None:
-          dbio[str(hash(fen))] = pb
+        if dbio is not None:  # Write to SQLite and use dict->json
+          d = {
+            'board': enc_board.tolist(),
+            'label': enc_move,
+            'fen': fen,
+            }
+          dbio[str(hash(fen))] = d
           if n_gen % 100000 == 0:
-            print("COMMIT")
+            print("COMMIT", n_gen)
             dbio.commit()
 
   if rio:
