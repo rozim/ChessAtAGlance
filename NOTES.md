@@ -1,6 +1,32 @@
 
 2023-11-03
 ==========
+top activation v2, with lion
+	glu
+	relu6
+	silu
+	relu
+	gelu
+
+2023-11-03
+==========
+top optimizers
+	lion
+	adabelief
+	adamw
+	adam
+	adamx
+
+2023-11-03
+==========
+top activation
+	hard_silu
+	glu
+	silu
+	gelu
+
+2023-11-03
+==========
 best lr:
 	0.0050000
 	0.0010000

@@ -158,6 +158,17 @@ TRANSFORMER_FEATURES = {
   'label': tf.io.FixedLenFeature([], tf.int64)
 }
 
+TRANSFORMER_WDL_FEATURES = {
+  'board': tf.io.FixedLenFeature(TRANSFORMER_SHAPE, tf.int64),
+  'result': tf.io.FixedLenFeature([], tf.int64),
+}
+
+TRANSFORMER_WDL_FEATURES_FEN = {
+  'board': tf.io.FixedLenFeature(TRANSFORMER_SHAPE, tf.int64),
+  'result': tf.io.FixedLenFeature([], tf.int64),
+  'fen': tf.io.FixedLenFeature([], tf.string),
+}
+
 def encode_cnn_board_move_wtm(board, move):
   if board.turn == BLACK:
     # As move was already played.. (confusing)
