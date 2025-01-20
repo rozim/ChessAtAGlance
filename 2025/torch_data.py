@@ -47,9 +47,10 @@ def main(argv):
     t = ent['board_1024']
 
     print(t.shape)
+    assert t.shape == (1, 1024), t.shape
     t = ent['move_1968']
     print(t.shape)
-    assert t.shape == 1
+    assert t.shape == (1,), t.shape
     break
 
 
