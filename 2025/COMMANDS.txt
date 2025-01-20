@@ -1,0 +1,1 @@
+python generate_training_data.py --pgn ~/Projects/ChessData/Twic/twic1174.pgn --out data/twic1174.jsonl
