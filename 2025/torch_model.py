@@ -46,20 +46,19 @@ class ResBlock(nn.Module):
 
 class MySimpleModel(nn.Module):
   def __init__(self,
-               n_blocks: int,
-               n_channels: int,
-               n_choke: int):
+               mplan: dict):
+
     super().__init__()
 
-    self.n_blocks = n_blocks
+    self.n_blocks = mplan.n_blocks
     self.project = nn.Conv2d(in_channels=IN_CHANNELS,
-                             out_channels=n_channels,
+                             out_channels=mplan.n_channels,
                              kernel_size=3,
                              padding='same',
                              bias=False)
 
-    for block in range(n_blocks):
-      setattr(self, f'res_{block}', ResBlock(n_channels=n_channels))
+    for block in range(mplan.n_blocks):
+      setattr(self, f'res_{block}', ResBlock(n_channels=mplan.n_channels))
 
     self.flatten = nn.Flatten()
     self.logits = nn.LazyLinear(1968)

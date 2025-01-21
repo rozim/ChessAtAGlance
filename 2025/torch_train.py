@@ -4,7 +4,7 @@ import sys
 import time
 import pprint
 import random
-
+import toml
 import torch
 from torch import nn
 import torch.nn.functional as F
@@ -20,8 +20,7 @@ from torchinfo  import summary
 
 from torch_model import MySimpleModel
 from torch_data import MyDataset
-
-import torchdata
+from objdict import objdict
 
 flags.DEFINE_string('train',
                     'data/mega2600_shuffled_train.json',
@@ -29,7 +28,9 @@ flags.DEFINE_string('train',
 flags.DEFINE_string('test',
                     'data/mega2600_shuffled_test.json',
                     'Output - test')
-flags.DEFINE_string('device', '', 'cpu/gpu/mps. If not set then tries for best avail.')
+flags.DEFINE_string('device', None, 'cpu/gpu/mps. If not set then tries for best avail.')
+flags.DEFINE_string('plan', None, 'toml file')
+flags.mark_flags_as_required(['plan'])
 
 FLAGS = flags.FLAGS
 
@@ -88,6 +89,16 @@ def run_eval(model, device, loss_fn, dl, limit):
   print(f'time: {dt:.1f}s')
 
 
+class objdict(dict):
+  def __getattr__(self, name):
+    assert name in self, (name, self.keys())
+    return self[name]
+
+
+def load_plan(fn):
+  return toml.load(fn, objdict)
+
+
 def main(argv):
   if FLAGS.device:
     device = FLAGS.device
@@ -98,21 +109,25 @@ def main(argv):
       else "cpu"
     )
   print('device: ', device)
+  plan = load_plan(FLAGS.plan)
+  tplan = plan.train
+  mplan = plan.model
+  dplan = plan.data
 
-  model = MySimpleModel(n_channels=5,
-                        n_blocks=3,
-                        n_choke=7)
+  toml.dump(plan, sys.stdout)
+
+  model = MySimpleModel(mplan)
   model = model.to(device)
 
   d1 = MyDataset(FLAGS.train)
   d2 = ShuffleDataset(d1, buffer_size=1024)
 
-  dl_train = torch.utils.data.DataLoader(d2, batch_size=64)
+  dl_train = torch.utils.data.DataLoader(d2, batch_size=dplan.batch_size)
 
 
   loss_fn = nn.CrossEntropyLoss()
   print(loss_fn)
-  optimizer = torch.optim.AdamW(model.parameters(), lr=1e-3)
+  optimizer = torch.optim.AdamW(model.parameters(), lr=tplan.lr)
   print(optimizer)
 
   model.train()
@@ -165,16 +180,19 @@ def main(argv):
       #print('c: ', y_stats.most_common(10), y_stats.total())
       correct, correct_tot = 0, 0
       # if batch >= 1000: break
+      if loss_stale >= tplan.loss_stale or acc_stale >= tplan.acc_stale:
+        print('# Stale')
+        break
 
   dt = time.time() - t1
   print(f'train time: {dt:.1f}s')
   model.eval()
   print()
   print('Eval: test')
-  run_eval(model, device, loss_fn, torch.utils.data.DataLoader(MyDataset(FLAGS.test), batch_size=64), limit=10240)
+  run_eval(model, device, loss_fn, torch.utils.data.DataLoader(MyDataset(FLAGS.test), batch_size=dplan.batch_size), limit=10240)
   print()
   print('Eval: train')
-  run_eval(model, device, loss_fn, torch.utils.data.DataLoader(MyDataset(FLAGS.train), batch_size=64), limit=10240)
+  run_eval(model, device, loss_fn, torch.utils.data.DataLoader(MyDataset(FLAGS.train), batch_size=dplan.batch_size), limit=10240)
   print()
 
 

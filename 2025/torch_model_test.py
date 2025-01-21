@@ -3,19 +3,20 @@ from absl.testing import absltest
 import torch
 from torch_model import MySimpleModel
 import pprint
+from objdict import objdict
 
 class TorchModelTest(absltest.TestCase):
   def test_model_output(self):
-    model = MySimpleModel(n_channels=5,
-                          n_blocks=3,
-                          n_choke=7)
+    model = MySimpleModel(objdict(n_channels=5,
+                                  n_blocks=3,
+                                  n_choke=7))
     y = model(torch.rand(1, 1024))
     assert y.dtype == torch.float32, y.dtype
     assert y.shape == (1, 1968), y.shape
 
-    model = MySimpleModel(n_channels=5,
-                          n_blocks=0,
-                          n_choke=7)
+    model = MySimpleModel(objdict(n_channels=5,
+                                  n_blocks=0,
+                                  n_choke=7))
     y = model(torch.rand(1, 1024))
     assert y.dtype == torch.float32, y.dtype
     assert y.shape == (1, 1968), y.shape
