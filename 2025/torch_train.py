@@ -29,6 +29,7 @@ flags.DEFINE_string('train',
 flags.DEFINE_string('test',
                     'data/mega2600_shuffled_test.json',
                     'Output - test')
+flags.DEFINE_string('device', '', 'cpu/gpu/mps. If not set then tries for best avail.')
 
 FLAGS = flags.FLAGS
 
@@ -88,11 +89,14 @@ def run_eval(model, device, loss_fn, dl, limit):
 
 
 def main(argv):
-  device = (
-    "cuda" if torch.cuda.is_available()
-    else "mps" if torch.backends.mps.is_available()
-    else "cpu"
-  )
+  if FLAGS.device:
+    device = FLAGS.device
+  else:
+    device = (
+      "cuda" if torch.cuda.is_available()
+      else "mps" if torch.backends.mps.is_available()
+      else "cpu"
+    )
   print('device: ', device)
 
   model = MySimpleModel(n_channels=5,
@@ -119,6 +123,11 @@ def main(argv):
   freq = 100
   t1 = time.time()
 
+  best_acc = 0.0
+  best_loss = 999
+  loss_stale = 0
+  acc_stale = 0
+
   for batch, entry in enumerate(dl_train):
     x = entry['board_1024']
     total_examples += len(x)
@@ -140,7 +149,18 @@ def main(argv):
       dt = time.time() - t1
       loss = loss.item()
       xps = total_examples / dt
-      print(f"{reports:6d}. {dt:5.1f}s, xps: {xps:6.1f}, loss: {loss:>6.2f}, accuracy: {100.0 * correct / correct_tot:>6.2f}")
+      acc = correct / correct_tot if correct_tot > 0 else 0.0
+      if loss < best_loss:
+        best_loss = loss
+        loss_stale = 0
+      else:
+        loss_stale += 1
+      if acc > best_acc:
+        best_acc = acc
+        acc_stale = 0
+      else:
+        acc_stale += 1
+      print(f"{reports:6d}. {dt:5.1f}s, xps: {xps:6.1f}, loss: {loss:>6.2f} ({loss_stale:4d}), accuracy: {100.0 * correct / correct_tot:>6.2f} ({acc_stale:4d})")
       reports += 1
       #print('c: ', y_stats.most_common(10), y_stats.total())
       correct, correct_tot = 0, 0
