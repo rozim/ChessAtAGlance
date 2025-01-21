@@ -51,7 +51,10 @@ def munch(pgn, fp, already):
   with jsonlines.Writer(fp, sort_keys=True) as writer:
     for i, game in enumerate(gen_games(pgn)):
       headers = game.headers
-      iresult = RESULT_MAP[headers['Result']] # 0/1/2 WDL
+      try:
+        iresult = RESULT_MAP[headers['Result']] # 0/1/2 WDL
+      except KeyError:
+        continue  # Result: "*" presumably
       ng += 1
       moves = list(gen_moves(game))
       for j, (move, san, sfen, ply) in enumerate(moves):
