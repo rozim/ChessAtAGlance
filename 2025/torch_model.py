@@ -1,4 +1,3 @@
-from collections import Counter
 import code
 import sys
 import time
@@ -9,25 +8,16 @@ import torch.nn.functional as F
 from torch.utils.data import DataLoader
 import numpy as np
 
-
 from absl import app
 from absl import flags
 from absl import logging
 
-from torch_data import MyDataset
 from torchinfo  import summary
 
 
 FLAGS = flags.FLAGS
 
-
-class AddLayer(nn.Module):
-  def __init__(self):
-    super().__init__()
-
-  def forward(self, x1, x2):
-    return x1 + x2
-
+IN_CHANNELS = 16
 
 # https://github.com/geochri/AlphaZero_Chess/blob/master/src/alpha_net.py
 # Slightly modified.
@@ -53,6 +43,7 @@ class ResBlock(nn.Module):
     x = F.relu(x)
     return x
 
+
 class MySimpleModel(nn.Module):
   def __init__(self,
                n_blocks: int,
@@ -61,7 +52,7 @@ class MySimpleModel(nn.Module):
     super().__init__()
 
     self.n_blocks = n_blocks
-    self.project = nn.Conv2d(in_channels=16,
+    self.project = nn.Conv2d(in_channels=IN_CHANNELS,
                              out_channels=n_channels,
                              kernel_size=3,
                              padding='same',
@@ -75,7 +66,7 @@ class MySimpleModel(nn.Module):
 
 
   def forward(self, x):
-    x = x.view(-1, 16, 8, 8) # should be [BS, 1024]
+    x = x.view(-1, IN_CHANNELS, 8, 8) # should be [BS, 1024]
     x = self.project(x)
 
     for block in range(self.n_blocks):
