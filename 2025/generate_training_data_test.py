@@ -1,6 +1,5 @@
 from absl.testing import absltest
 
-from generate_training_data import *
 
 
 class GenerateTrainingDataTest(absltest.TestCase):

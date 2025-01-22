@@ -2,11 +2,10 @@
 
 # Dedup board,move
 
-import io
 import time
 
 import jsonlines
-from absl import app, flags, logging
+from absl import app, flags
 
 FLAGS = flags.FLAGS
 
@@ -20,7 +19,7 @@ flags.DEFINE_string('output',
 
 
 def main(argv):
-  t1 = time.time()
+  time.time()
   already = set()
 
   keep, reject = 0, 0

@@ -1,12 +1,8 @@
-import gzip
 import pprint
 
 import jsonlines
-import numpy as np
 import torch
-from absl import app, flags, logging
-from torch import nn
-from torch.utils.data import DataLoader
+from absl import app, flags
 
 FLAGS = flags.FLAGS
 

@@ -11,7 +11,7 @@ import sys
 
 import chess
 import numpy as np
-from absl import app, flags
+from absl import app
 from chess import BISHOP, BLACK, KING, KNIGHT, PAWN, QUEEN, ROOK, WHITE, Piece
 
 from encode_move import MOVE_TO_INDEX

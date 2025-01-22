@@ -3,10 +3,9 @@
 # Assume it is already shuffled.
 # Simplified version w/o compression from ../jsonlines_split.py
 
-import io
 import time
 
-from absl import app, flags, logging
+from absl import app, flags
 
 FLAGS = flags.FLAGS
 
@@ -25,7 +24,7 @@ flags.DEFINE_integer('pc', 99, 'Percent train')
 
 
 def main(argv):
-  t1 = time.time()
+  time.time()
   f_in = open(FLAGS.input, 'r')
 
   f1 = open(FLAGS.train, 'w')

@@ -6,11 +6,9 @@
 import hashlib
 import os
 import random
-import sys
-import time
 
 import jsonlines
-from absl import app, flags, logging
+from absl import app, flags
 
 FLAGS = flags.FLAGS
 

@@ -3,22 +3,15 @@
 # Make all moves in every position and search these positions.
 # Adds "noise" or variety to eventual training data.
 
-import glob
-import io
-import json
 import os
-import random
 import sys
 import time
-import zlib
 
 import chess
 import chess.engine
 import chess.pgn
 import jsonlines
-import numpy as np
-from absl import app, flags, logging
-from chess import BLACK, WHITE
+from absl import app, flags
 
 from encode import encode_cnn_board_move_wtm
 
