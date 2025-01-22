@@ -51,7 +51,7 @@ class MySimpleModel(nn.Module):
     super().__init__()
 
     self.n_blocks = mplan.n_blocks
-    self.project = nn.Conv2d(in_channels=IN_CHANNELS,
+    self.project = nn.Conv2d(in_channels=16, # IN_CHANNELS
                              out_channels=mplan.n_channels,
                              kernel_size=3,
                              padding='same',
@@ -65,7 +65,7 @@ class MySimpleModel(nn.Module):
 
 
   def forward(self, x):
-    x = x.view(-1, IN_CHANNELS, 8, 8) # should be [BS, 1024]
+    x = x.view(-1, 16, 8, 8) # should be [BS, 1024]
     x = self.project(x)
 
     for block in range(self.n_blocks):
