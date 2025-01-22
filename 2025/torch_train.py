@@ -161,6 +161,9 @@ def main(argv):
       optimizer.zero_grad()
 
     if batch % freq == 0:
+      torch.save(model.state_dict(), 'checkpoint.save')
+      #torch.jit.script(model).save('checkpoint.pt')
+
       dt = time.time() - t1
       loss = loss.item()
       xps = total_examples / dt
@@ -180,10 +183,11 @@ def main(argv):
       #print('c: ', y_stats.most_common(10), y_stats.total())
       correct, correct_tot = 0, 0
       # if batch >= 1000: break
-      if loss_stale >= tplan.loss_stale or acc_stale >= tplan.acc_stale:
+      if (tplan.loss_stale > 0 and loss_stale >= tplan.loss_stale) or (tplan.acc_stale > 0 and acc_stale >= tplan.acc_stale):
         print('# Stale')
         break
 
+  torch.save(model.state_dict(), 'model.save')
   dt = time.time() - t1
   print(f'train time: {dt:.1f}s')
   model.eval()
