@@ -23,10 +23,10 @@ from torch_data import MyDataset
 from objdict import objdict
 
 flags.DEFINE_string('train',
-                    'data/mega2600_shuffled_train.json',
+                    'data/mega2600_shuffled_train.jsonl',
                     'Output - train')
 flags.DEFINE_string('test',
-                    'data/mega2600_shuffled_test.json',
+                    'data/mega2600_shuffled_test.jsonl',
                     'Output - test')
 flags.DEFINE_string('device', None, 'cpu/gpu/mps. If not set then tries for best avail.')
 flags.DEFINE_string('plan', None, 'toml file')
@@ -88,11 +88,6 @@ def run_eval(model, device, loss_fn, dl, limit):
   print(f'loss {total_loss / batch:.1f}')
   print(f'time: {dt:.1f}s')
 
-
-class objdict(dict):
-  def __getattr__(self, name):
-    assert name in self, (name, self.keys())
-    return self[name]
 
 
 def load_plan(fn):
@@ -161,7 +156,7 @@ def main(argv):
       optimizer.zero_grad()
 
     if batch % freq == 0:
-      torch.save(model.state_dict(), 'checkpoint.save')
+      torch.save(model.state_dict(), 'checkpoint.pt')
       #torch.jit.script(model).save('checkpoint.pt')
 
       dt = time.time() - t1
@@ -187,7 +182,7 @@ def main(argv):
         print('# Stale')
         break
 
-  torch.save(model.state_dict(), 'model.save')
+  torch.save(model.state_dict(), 'model.pt')
   dt = time.time() - t1
   print(f'train time: {dt:.1f}s')
   model.eval()
