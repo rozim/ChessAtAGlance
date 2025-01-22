@@ -3,15 +3,10 @@
 # Dedup board,move
 
 import io
-
-from absl import app
-from absl import flags
-from absl import logging
-
-import jsonlines
-
 import time
 
+import jsonlines
+from absl import app, flags, logging
 
 FLAGS = flags.FLAGS
 

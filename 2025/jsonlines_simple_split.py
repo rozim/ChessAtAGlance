@@ -4,13 +4,9 @@
 # Simplified version w/o compression from ../jsonlines_split.py
 
 import io
-
-from absl import app
-from absl import flags
-from absl import logging
-
 import time
 
+from absl import app, flags, logging
 
 FLAGS = flags.FLAGS
 

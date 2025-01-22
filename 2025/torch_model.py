@@ -2,17 +2,14 @@ import code
 import sys
 import time
 
-import torch
-from torch import nn
-import torch.nn.functional as F
-from torch.utils.data import DataLoader
 import numpy as np
+import torch
+import torch.nn.functional as F
+from absl import app, flags, logging
+from torch import nn
+from torch.utils.data import DataLoader
+from torchinfo import summary
 
-from absl import app
-from absl import flags
-from absl import logging
-
-from torchinfo  import summary
 from objdict import objdict
 
 FLAGS = flags.FLAGS

@@ -9,18 +9,15 @@
 #
 import sys
 
-import numpy as np
-
 import chess
-from chess import WHITE, BLACK, Piece
-from chess import PAWN, KNIGHT, BISHOP, ROOK, QUEEN, KING
+import numpy as np
+from absl import app, flags
+from chess import BISHOP, BLACK, KING, KNIGHT, PAWN, QUEEN, ROOK, WHITE, Piece
 
-from absl import app
-from absl import flags
+from encode_move import MOVE_TO_INDEX
 
 ##### import tensorflow as tf
 
-from encode_move import MOVE_TO_INDEX
 
 NUM_CLASSES = len(MOVE_TO_INDEX)
 

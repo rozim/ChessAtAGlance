@@ -1,9 +1,11 @@
-from absl.testing import absltest
+import pprint
 
 import torch
-from torch_model import MySimpleModel
-import pprint
+from absl.testing import absltest
+
 from objdict import objdict
+from torch_model import MySimpleModel
+
 
 class TorchModelTest(absltest.TestCase):
   def test_model_output(self):

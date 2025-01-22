@@ -1,32 +1,27 @@
-from collections import Counter
-import os
 import code
-import sys
-import time
+import os
 import pprint
 import random
-import toml
-import torch
-from torch import nn
-import torch.nn.functional as F
-from torch.utils.data import DataLoader
-
-import chess
-
-import numpy as np
-
-from absl import app
-from absl import flags
-from absl import logging
-
+import sys
+import time
+from collections import Counter
 from typing import Callable
 
-from torchinfo  import summary
-from torch_model import MySimpleModel
-from torch_data import MyDataset
-from objdict import objdict
+import chess
+import numpy as np
+import toml
+import torch
+import torch.nn.functional as F
+from absl import app, flags, logging
+from torch import nn
+from torch.utils.data import DataLoader
+from torchinfo import summary
+
 from encode import encode_cnn_board_wtm
 from encode_move import MOVE_TO_INDEX
+from objdict import objdict
+from torch_data import MyDataset
+from torch_model import MySimpleModel
 
 FLAGS = flags.FLAGS
 flags.DEFINE_string('device', None, 'cpu/gpu/mps. If not set then tries for best avail.')

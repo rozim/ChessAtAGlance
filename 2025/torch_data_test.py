@@ -1,8 +1,10 @@
-from absl.testing import absltest
+import pprint
 
 import torch
+from absl.testing import absltest
+
 from torch_data import MyDataset
-import pprint
+
 
 class TorchDataTest(absltest.TestCase):
   def test_data_read(self):

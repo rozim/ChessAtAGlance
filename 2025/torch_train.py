@@ -1,29 +1,24 @@
-from collections import Counter
 import code
-import sys
-import time
 import pprint
 import random
-import toml
-import torch
-from torch import nn
-import torch.nn.functional as F
-from torch.utils.data import DataLoader
+import sys
+import time
+from collections import Counter
+from typing import Callable
 
 import numpy as np
-
-from absl import app
-from absl import flags
-from absl import logging
-
-from torchinfo  import summary
-
-from torch_model import MySimpleModel
-from torch_data import MyDataset
-from torch_eval import run_eval
+import toml
+import torch
+import torch.nn.functional as F
+from absl import app, flags, logging
+from torch import nn
+from torch.utils.data import DataLoader
+from torchinfo import summary
 
 from objdict import objdict
-from typing import Callable
+from torch_data import MyDataset
+from torch_eval import run_eval
+from torch_model import MySimpleModel
 
 flags.DEFINE_string('train',
                     'data/mega2600_shuffled_train.jsonl',

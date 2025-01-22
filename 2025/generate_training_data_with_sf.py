@@ -4,24 +4,21 @@
 # Adds "noise" or variety to eventual training data.
 
 import glob
+import io
 import json
-import os, sys
+import os
 import random
+import sys
 import time
 import zlib
-import io
-
-from absl import app
-from absl import flags
-from absl import logging
 
 import chess
 import chess.engine
 import chess.pgn
-from chess import WHITE, BLACK
-import numpy as np
-
 import jsonlines
+import numpy as np
+from absl import app, flags, logging
+from chess import BLACK, WHITE
 
 from encode import encode_cnn_board_move_wtm
 

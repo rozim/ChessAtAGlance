@@ -3,18 +3,14 @@
 # Assume it is already shuffled.
 # Simplified version w/o compression from ../jsonlines_split.py
 
-import os
-
-from absl import app
-from absl import flags
-from absl import logging
-
 import hashlib
-import jsonlines
+import os
 import random
 import sys
 import time
 
+import jsonlines
+from absl import app, flags, logging
 
 FLAGS = flags.FLAGS
 
