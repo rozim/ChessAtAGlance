@@ -20,7 +20,10 @@ from torchinfo  import summary
 
 from torch_model import MySimpleModel
 from torch_data import MyDataset
+from torch_eval import run_eval
+
 from objdict import objdict
+from typing import Callable
 
 flags.DEFINE_string('train',
                     'data/mega2600_shuffled_train.jsonl',
@@ -64,29 +67,6 @@ class ShuffleDataset(torch.utils.data.IterableDataset):
     except GeneratorExit:
       pass
 
-
-def run_eval(model, device, loss_fn, dl, limit):
-  t1 = time.time()
-  examples, total_loss, correct, correct_tot = 0, 0.0, 0, 0
-  with torch.no_grad():
-    for batch, entry in enumerate(dl):
-      x = entry['board_1024']
-      y = entry['move_1968']
-      x, y = x.to(device), y.to(device)
-      pred = model(x)
-      loss = loss_fn(pred, y)
-      total_loss += loss.item()
-      nc = (pred.argmax(1) == y).type(torch.float).sum().item()
-      correct += nc
-      correct_tot += len(x)
-      examples += len(x)
-      if examples >= limit:
-        break
-
-  dt = time.time() - t1
-  print(f'eval correct={correct:,} correct_tot={correct_tot:,} ratio={100.0 * correct / correct_tot:>6.3f}')
-  print(f'loss {total_loss / batch:.1f}')
-  print(f'time: {dt:.1f}s')
 
 
 

@@ -13,7 +13,7 @@ from absl import flags
 from absl import logging
 
 from torchinfo  import summary
-
+from objdict import objdict
 
 FLAGS = flags.FLAGS
 
@@ -46,7 +46,7 @@ class ResBlock(nn.Module):
 
 class MySimpleModel(nn.Module):
   def __init__(self,
-               mplan: dict):
+               mplan: objdict):
 
     super().__init__()
 
