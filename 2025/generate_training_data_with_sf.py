@@ -14,17 +14,29 @@ import jsonlines
 from absl import app, flags
 
 from encode import encode_cnn_board_move_wtm
+from contextlib import contextmanager
+from typing import Any
 
 FLAGS = flags.FLAGS
-flags.DEFINE_string('pgn', 't1.pgn', 'PGN file or pattern')
-flags.DEFINE_string('out', '', 'Output, jsonlines')
+flags.DEFINE_string('input_pgn', '', 'PGN file or pattern')
+flags.DEFINE_string('input_jsonl', '', 'Jsonl from previous run')
+flags.DEFINE_string('output', '', 'Output, jsonlines')
 flags.DEFINE_string('engine', './stockfish', '')
 flags.DEFINE_integer('search_depth', 6, '')
-flags.DEFINE_integer('multipv', 0, '')
+flags.DEFINE_integer('multipv', 1, '')
 flags.DEFINE_integer('delta', 0, 'For when using multipv')
 
 HASH = 1024
 THREADS = 1
+
+
+@contextmanager
+def push_pop_move(board: chess.Board, move: chess.Move):
+  try:
+    board.push(move)
+    yield
+  finally:
+    board.pop()
 
 
 def gen_games(fn):
@@ -48,114 +60,137 @@ def simplify_fen(board):
   return ' '.join(board.fen().split(' ')[0:4])
 
 
-def munch(pgn: str, fp, already: set, engine):
-  # move1: game move
-  # move2: all moves, from mml
-  # move3: sf's best move
+def sf_analyze(engine: Any, sfen2: str, *, depth: int, multipv: int, delta: int):
+  board = chess.Board(sfen2)
+  multi3 = engine.analyse(board, chess.engine.Limit(depth=depth), multipv=multipv)
+  first = multi3[0]['score'].white()
+  for i3, res3 in enumerate(multi3):
+    white = res3['score'].white()
+    if white.is_mate() or first.is_mate():
+      continue
+    elif abs(white.score() - first.score()) > delta:
+      continue
 
-  ng = 0
-  nm = 0
-  with jsonlines.Writer(fp, sort_keys=True) as writer:
-    for i, game in enumerate(gen_games(pgn)):
-      ng += 1
-      moves = list(gen_moves(game))
-      for j, (move1, san1, sfen1, ply1) in enumerate(moves):
-        nm += 1
-        if sfen1 in already:
+    move3 = res3['pv'][0]
+
+    san3 = board.san(move3)
+    enc_board3, py_move3 = encode_cnn_board_move_wtm(board, move3)
+    py_board3 = enc_board3.astype(int).flatten().tolist()
+    yield {'sfen': sfen2,
+           'board_1024': py_board3,
+           'move_1968': py_move3,
+           'move_uci': move3.uci(),
+           'move_san': san3,
+           'multi': i3}
+
+
+
+def gen_games_moves(pgn: str):
+  for game in gen_games(pgn):
+    yield from gen_moves(game)
+
+
+def gen_positions_for_sf(pgn: str, already: set):
+  for (_, san1, sfen1, _) in gen_games_moves(pgn):
+    if sfen1 in already:
+      continue
+    already.add(sfen1)
+    yield sfen1  # Might as well analyze game position too so SF can be more thorough.
+
+    # Now expand all moves and yield resulting positions.
+    board = chess.Board(sfen1)
+    for move2 in board.legal_moves:
+      with push_pop_move(board, move2) as _:
+        if board.outcome() is not None:
           continue
-        already.add(sfen1)
-        board = chess.Board(sfen1)
-        for move2 in board.legal_moves:
-          board.push(move2)
-          if board.outcome() is not None:
-            board.pop()
-            continue
-          sfen2 = simplify_fen(board)
-          if sfen2 in already:
-            board.pop()
-            continue
-          already.add(sfen2)
+        sfen2 = simplify_fen(board)
+        if sfen2 in already:
+          continue
+        already.add(sfen2)
+        yield sfen2
 
-          if FLAGS.multipv == 1:
-            res3 = engine.analyse(board, chess.engine.Limit(depth=FLAGS.search_depth))
-            move3 = res3['pv'][0]
-            san3 = board.san(move3)
-            enc_board3, py_move3 = encode_cnn_board_move_wtm(board, move3)
-            py_board3 = enc_board3.astype(int).flatten().tolist()
+def gen_positions_for_sf_from_fen(sfen1: str, already: set):
+  already.add(sfen1)
 
-            # hack = chess.Board(sfen2)
-            # assert hack.is_legal(move3), [hack.fen(), move3.uci()]
-            # engine.quit()
-            # sys.exit(0)
-            j = {'sfen': sfen2,
-                 'board_1024': py_board3,
-                 'move_1968': py_move3,
-                 'move_uci': move3.uci(),
-                 'move_san': san3}
-            writer.write(j)
-          else:
-            multi3 = engine.analyse(board, chess.engine.Limit(depth=FLAGS.search_depth), multipv=FLAGS.multipv)
-            first = multi3[0]['score'].white()
-            first_mate = first.is_mate()
-            # if first.score() is None:
-            #   print(board.fen())
-            #   print(multi3)
-            #   sys.exit(0)
-            #   continue
-            for i3, res3 in enumerate(multi3):
-              white = res3['score'].white()
-              try:
-                if first_mate:
-                  if not white.is_mate():
-                    continue
-                elif white.is_mate():
-                  continue # confusing scenario?!
-                elif abs(white.score() - first.score()) > FLAGS.delta:
-                  continue
-              except TypeError:
-                import pprint
-                print(res3['score'].white().is_mate())
-                print(res3['score'].black().is_mate())
-                print(res3['score'].white().mate())
-                print(res3['score'].black().mate())
-                print(first.mate())
-                pprint.pprint(multi3)
-                engine.quit()
-                sys.exit(123)
-              move3 = res3['pv'][0]
+  # Now expand all moves and yield resulting positions.
+  board = chess.Board(sfen1)
+  for move2 in board.legal_moves:
+    with push_pop_move(board, move2) as _:
+      if board.outcome() is not None:
+        continue
+      sfen2 = simplify_fen(board)
+      if sfen2 in already:
+        continue
+      already.add(sfen2)
+      yield sfen2
 
-              san3 = board.san(move3)
-              enc_board3, py_move3 = encode_cnn_board_move_wtm(board, move3)
-              py_board3 = enc_board3.astype(int).flatten().tolist()
-              j = {'sfen': sfen2,
-                   'board_1024': py_board3,
-                   'move_1968': py_move3,
-                   'move_uci': move3.uci(),
-                   'move_san': san3,
-                   'multi': i3}
-              writer.write(j)
-
-          board.pop()
-
-  return ng, nm
 
 
 def main(_):
-  assert os.path.exists(FLAGS.pgn)
+  if FLAGS.input_pgn:
+    assert os.path.exists(FLAGS.input_pgn)
+    assert 'pgn' in FLAGS.input_pgn
+  if FLAGS.input_jsonl:
+    assert os.path.exists(FLAGS.input_jsonl)
+    assert 'jsonl' in FLAGS.input_jsonl
+  assert FLAGS.input_pgn or FLAGS.input_jsonl
+  assert not (FLAGS.input_pgn and FLAGS.input_jsonl) # whew
+
+  assert 'jsonl' in FLAGS.output
+
+  assert FLAGS.input_pgn != FLAGS.output
+  assert FLAGS.input_jsonl != FLAGS.output
+
   assert os.path.exists(FLAGS.engine)
-  assert 'jsonl' in FLAGS.out
 
   engine = chess.engine.SimpleEngine.popen_uci(FLAGS.engine)
   engine.ping()
   engine.configure({'Hash': HASH})
   engine.configure({'Threads': THREADS})
-  # res = engine.analyse(board, chess.engine.Limit(depth=1))
 
-  with open(FLAGS.out, 'w') as fp:
-    t1 = time.time()
-    ng, nm = munch(FLAGS.pgn, fp, set(), engine)
-    dt = time.time() - t1
-    print(f'{ng} {nm} | gps={ng/dt:.1f} mps={nm/dt:.1f} {dt:.1f}s')
+  already = set()
+  with open(FLAGS.output, 'w') as fp:
+    with jsonlines.Writer(fp, sort_keys=True) as writer:
+      if FLAGS.input_pgn:
+        for fen in gen_positions_for_sf(FLAGS.input_pgn, already):
+          for j in sf_analyze(engine, fen, depth=FLAGS.search_depth,
+                              multipv=FLAGS.multipv,
+                              delta=FLAGS.delta):
+            writer.write(j)
+      else:
+        t1 = time.time()
+        mod = 1000
+        rows = 0
+        print('Initial read')
+        for j_in in jsonlines.open(FLAGS.input_jsonl, mode='r'):
+          rows += 1
+          already.add(j_in['sfen'])
+          if rows % mod == 0:
+            print(f'{len(already)} {rows} {time.time() - t1:.1f}')
+            mod *= 2
+            if mod > 10_0000:
+              mod = 10_0000
+
+        print(f'Already: {len(already)} {time.time() - t1}s')
+        #for j_in in jsonlines.open(FLAGS.input_jsonl, mode='r'):
+        row1, row2, row3 = 0, 0, 0
+        mod = 1000
+        t1 = time.time()
+        for sfen1 in already.copy():
+          row1 += 1
+          if row1 % mod == 0:
+            print(row1, row2, row3, time.time() - t1)
+            mod *= 2
+            if mod > 10_000:
+              mod = 10_000
+          for fen in gen_positions_for_sf_from_fen(sfen1, already):
+            row2 += 1
+            for j in sf_analyze(engine, fen, depth=FLAGS.search_depth,
+                                multipv=FLAGS.multipv,
+                                delta=FLAGS.delta):
+              row3 += 1
+              writer.write(j)
+
   engine.quit()
 
 
