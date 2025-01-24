@@ -6,6 +6,8 @@
 import os
 import sys
 import time
+from contextlib import contextmanager
+from typing import Any
 
 import chess
 import chess.engine
@@ -14,8 +16,6 @@ import jsonlines
 from absl import app, flags
 
 from encode import encode_cnn_board_move_wtm
-from contextlib import contextmanager
-from typing import Any
 
 FLAGS = flags.FLAGS
 flags.DEFINE_string('input_pgn', '', 'PGN file or pattern')
