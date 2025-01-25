@@ -8,6 +8,7 @@ import sys
 import time
 from contextlib import contextmanager
 from typing import Any
+import gzip
 
 import chess
 import chess.engine
@@ -20,7 +21,7 @@ from encode import encode_cnn_board_move_wtm
 FLAGS = flags.FLAGS
 flags.DEFINE_string('input_pgn', '', 'PGN file or pattern')
 flags.DEFINE_string('input_jsonl', '', 'Jsonl from previous run')
-flags.DEFINE_string('output', '', 'Output, jsonlines')
+flags.DEFINE_string('output', '', 'Output, jsonlines, optionally .gz')
 flags.DEFINE_string('engine', './stockfish', '')
 flags.DEFINE_integer('search_depth', 6, '')
 flags.DEFINE_integer('multipv', 1, '')
@@ -124,6 +125,15 @@ def gen_positions_for_sf_from_fen(sfen1: str, already: set):
       already.add(sfen2)
       yield sfen2
 
+def smart_output(fn):
+  if fn.endswith('.gz'):
+    return gzip.GzipFile(fn, 'wb')
+  return open(fn, 'w')
+
+def smart_input(fn):
+  if fn.endswith('.gz'):
+    return gzip.GzipFile(fn, 'rb')
+  return open(fn, 'r')
 
 
 def main(_):
@@ -149,7 +159,8 @@ def main(_):
   engine.configure({'Threads': THREADS})
 
   already = set()
-  with open(FLAGS.output, 'w') as fp:
+
+  with smart_output(FLAGS.output) as fp:
     with jsonlines.Writer(fp, sort_keys=True) as writer:
       if FLAGS.input_pgn:
         for fen in gen_positions_for_sf(FLAGS.input_pgn, already):
@@ -157,12 +168,12 @@ def main(_):
                               multipv=FLAGS.multipv,
                               delta=FLAGS.delta):
             writer.write(j)
-      else:
+      else: # input jsonl
         t1 = time.time()
         mod = 1000
         rows = 0
         print('Initial read')
-        for j_in in jsonlines.open(FLAGS.input_jsonl, mode='r'):
+        for j_in in jsonlines.Reader(smart_input(FLAGS.input_jsonl)):
           rows += 1
           already.add(j_in['sfen'])
           if rows % mod == 0:
@@ -172,7 +183,7 @@ def main(_):
               mod = 10_0000
 
         print(f'Already: {len(already)} {time.time() - t1}s')
-        #for j_in in jsonlines.open(FLAGS.input_jsonl, mode='r'):
+
         row1, row2, row3 = 0, 0, 0
         mod = 1000
         t1 = time.time()
