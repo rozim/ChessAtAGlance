@@ -4,3 +4,10 @@ for i in 0 1 2 3 4 5; ...
 python generate_training_data.py --pgn /Users/dave/Projects/ChessData/mega2600_part_05.pgn --out data/mega2600_part_05.jsonl
 
 cat mega2600_part*.jsonl | shuf > mega2600_shuffled.jsonl
+
+nice time python jsonlines_dedup.py
+reject:  2729249
+keep  :  9609002
+input:                    'data/mega2600_shuffled.jsonl',
+output:                    'data/mega2600_shuffled_dedup.jsonl',
+      993.06 real       944.96 user        33.50 sys
