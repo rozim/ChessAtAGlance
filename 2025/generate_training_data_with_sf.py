@@ -26,6 +26,8 @@ flags.DEFINE_string('engine', './stockfish', '')
 flags.DEFINE_integer('search_depth', 6, '')
 flags.DEFINE_integer('multipv', 1, '')
 flags.DEFINE_integer('delta', 0, 'For when using multipv')
+flags.DEFINE_integer('hash100', -1, 'When >= 0 choose this 1% of the data.')
+flags.DEFINE_string('fen_file', '', '')
 
 HASH = 1024
 THREADS = 1
@@ -137,6 +139,8 @@ def smart_input(fn):
 
 
 def main(_):
+  if FLAGS.hash100 >= 0:
+    assert 0 <= FLAGS.hash100 < 100
   if FLAGS.input_pgn:
     assert os.path.exists(FLAGS.input_pgn)
     assert 'pgn' in FLAGS.input_pgn
@@ -163,34 +167,52 @@ def main(_):
   with smart_output(FLAGS.output) as fp:
     with jsonlines.Writer(fp, sort_keys=True) as writer:
       if FLAGS.input_pgn:
+        assert FLAGS.hash100 == -1  # Not implemented here.
         for fen in gen_positions_for_sf(FLAGS.input_pgn, already):
           for j in sf_analyze(engine, fen, depth=FLAGS.search_depth,
                               multipv=FLAGS.multipv,
                               delta=FLAGS.delta):
             writer.write(j)
       else: # input jsonl
-        t1 = time.time()
-        mod = 1000
-        rows = 0
-        print('Initial read')
-        for j_in in jsonlines.Reader(smart_input(FLAGS.input_jsonl)):
-          rows += 1
-          already.add(j_in['sfen'])
-          if rows % mod == 0:
-            print(f'{len(already)} {rows} {time.time() - t1:.1f}')
-            mod *= 2
-            if mod > 10_0000:
-              mod = 10_0000
+        if FLAGS.fen_file and os.path.exists(FLAGS.engine):
+          already = set((line.decode('utf-8').strip() for line in smart_input(FLAGS.fen_file)))
+          print("already: ", len(already))
+        else:
+          t1 = time.time()
+          mod = 1000
+          rows = 0
+          print('Initial read')
+          for j_in in jsonlines.Reader(smart_input(FLAGS.input_jsonl)):
+            rows += 1
+            already.add(j_in['sfen'])
+            if rows % mod == 0:
+              print(f'{len(already)} {rows} {time.time() - t1:.1f}')
+              mod *= 2
+              if mod > 10_0000:
+                mod = 10_0000
 
-        print(f'Already: {len(already)} {time.time() - t1}s')
+          print(f'Already: {len(already)} {time.time() - t1}s')
 
         row1, row2, row3 = 0, 0, 0
         mod = 1000
+        hash_keep, hash_reject = 0, 0
+
+        if FLAGS.fen_file and not os.path.exists(FLAGS.engine):
+          assert(already)
+          print('Output: ', FLAGS.fen_file)
+          with smart_output(FLAGS.fen_file) as fp:
+            fp.write('\n'.join(already).encode('utf-8'))
+
         t1 = time.time()
         for sfen1 in already.copy():
+          if FLAGS.hash100 >= 0:
+            if abs(hash(sfen1)) % 100 != FLAGS.hash100:
+              hash_reject += 1
+              continue
+            hash_keep += 1
           row1 += 1
           if row1 % mod == 0:
-            print(row1, row2, row3, time.time() - t1)
+            print(row1, row2, row3, hash_keep, hash_reject, f'{time.time() - t1:.1f}s')
             mod *= 2
             if mod > 10_000:
               mod = 10_000
@@ -203,6 +225,7 @@ def main(_):
               writer.write(j)
 
   engine.quit()
+  sys.exit(0)
 
 
 if __name__ == '__main__':
