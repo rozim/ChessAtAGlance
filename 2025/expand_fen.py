@@ -1,5 +1,5 @@
-# Read in PGN file of presumably serious games.
-# Extract all unique FENs in WTM.
+# Read in FEN file of presumably serious games.
+# Expand all legal positions in WTM format.
 
 import os
 import sys
@@ -9,6 +9,7 @@ from typing import Any
 import gzip
 
 import chess
+import chess.engine
 import chess.pgn
 import jsonlines
 from absl import app, flags
@@ -17,8 +18,8 @@ from encode import encode_cnn_board_move_wtm
 
 FLAGS = flags.FLAGS
 flags.DEFINE_string('input', '', 'PGN file or pattern')
-flags.DEFINE_string('output', '', 'Output text file')
-
+flags.DEFINE_string('output', '', 'Output, jsonlines, optionally .gz')
+flags.DEFINE_boolean('include', True, 'Include input FENs in output.')
 
 @contextmanager
 def push_pop_move(board: chess.Board, move: chess.Move):
@@ -26,6 +27,19 @@ def push_pop_move(board: chess.Board, move: chess.Move):
     board.push(move)
     yield
   finally:
+    board.pop()
+
+
+def gen_legal_sfens(board: chess.Board):
+  for board in gen_legal_boards(board):
+    yield simplify_fen(board)
+
+
+def gen_legal_boards(board: chess.Board):
+  for move in board.legal_moves:
+    board.push(move)
+    if board.outcome() is None:
+      yield board
     board.pop()
 
 
@@ -63,13 +77,18 @@ def smart_output(fn, mode='w'):
 
 def smart_input(fn, mode='r'):
   if fn.endswith('.gz'):
-    return gzip.GzipFile(fn, mode)
+    return gzip.open(fn, mode)
   return open(fn, mode)
 
+def strip(gen):
+  return (line.strip() for line in gen)
 
 def main(_):
   assert os.path.exists(FLAGS.input)
-  assert 'pgn' in FLAGS.input
+  assert 'fen' in FLAGS.input
+  assert 'pgn' not in FLAGS.input
+  assert 'fen' in FLAGS.output
+  assert 'pgn' not in FLAGS.output
   assert FLAGS.input != FLAGS.output
   assert FLAGS.output
   assert not os.path.exists(FLAGS.output), FLAGS.output
@@ -77,13 +96,24 @@ def main(_):
   already = set()
 
   with smart_output(FLAGS.output, 'wt') as fp:
-    for _, _, sfen, _ in gen_games_moves(FLAGS.input):
-      board = chess.Board(sfen)
-      if board.turn == chess.BLACK:
-        sfen = simplify_fen(board.mirror())
-      if sfen not in already:
+    for sfen in strip(smart_input(FLAGS.input, 'rt')):
+      assert sfen not in already, sfen
+      assert chess.Board(sfen).turn == chess.WHITE
+      already.add(sfen)
+      if FLAGS.include:
         fp.write(sfen + '\n')
-        already.add(sfen)
+
+    for sfen in strip(smart_input(FLAGS.input, 'rt')):
+      for sfen2 in gen_legal_sfens(chess.Board(sfen)):
+        board2 = chess.Board(sfen2)
+        if board2.turn == chess.BLACK:
+          sfen2 = simplify_fen(board2.mirror())
+        else:
+          assert False, 'insanity' # assumed wtm
+        if sfen2 in already:
+          continue
+        fp.write(sfen2 + '\n')
+        already.add(sfen2)
 
 
 if __name__ == '__main__':
