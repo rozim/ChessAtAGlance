@@ -1,0 +1,33 @@
+
+# Tue Jan 21 13:57:45 PST 2025
+## f1.toml
+
+   115. 2297.0s, xps: 5127.1, loss:   2.25 (  10), accuracy:  36.19 (  10)
+# Stale
+train time: 2297.1s
+
+Eval: test
+eval correct=3,601.0 correct_tot=10,240 ratio=35.166
+loss 2.4
+time: 1.6s
+
+Eval: train
+eval correct=3,672.0 correct_tot=10,240 ratio=35.859
+loss 2.4
+time: 1.6s
+
+# Tue Jan 21 16:02:49 PST 2025
+## f1c.toml
+
+   119. 2059.8s, xps: 5916.5, loss:   2.15 (   0), accuracy:  35.96 (   4)
+train time: 2065.2s
+
+Eval: test
+eval correct=3,672.0 correct_tot=10,240 ratio=35.859
+loss 2.5
+time: 1.6s
+
+Eval: train
+eval correct=3,694.0 correct_tot=10,240 ratio=36.074
+loss 2.5
+time: 1.6s
