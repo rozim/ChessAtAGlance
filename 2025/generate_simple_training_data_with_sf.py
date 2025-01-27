@@ -93,10 +93,15 @@ def main(_):
 
   n_in = 0
   n_out = 0
+  mod = 10_000
+  t1 = time.time()
   with smart_output(FLAGS.output) as fp:
     with jsonlines.Writer(fp, sort_keys=True) as writer:
       for sfen in strip(smart_input(FLAGS.input, 'rt')):
         n_in += 1
+        if n_in % mod == 0:
+          dt = time.time() - t1
+          print(n_in, n_out, f'{time.time() - t1:.1f}s')
         for j in sf_analyze(engine, sfen,
                             depth=FLAGS.search_depth,
                             multipv=FLAGS.multipv,
