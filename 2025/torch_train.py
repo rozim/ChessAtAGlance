@@ -14,10 +14,10 @@ from torch_eval import run_eval
 from torch_model import MySimpleModel
 
 flags.DEFINE_string('train',
-                    'data/mega2600_shuffled_train.jsonl',
+                    'data/mega2600_shuffled_train.jsonl.gz',
                     'Output - train')
 flags.DEFINE_string('test',
-                    'data/mega2600_shuffled_test.jsonl',
+                    'data/mega2600_shuffled_test.jsonl.gz',
                     'Output - test')
 flags.DEFINE_string('device', None, 'cpu/gpu/mps. If not set then tries for best avail.')
 flags.DEFINE_string('plan', None, 'toml file')
