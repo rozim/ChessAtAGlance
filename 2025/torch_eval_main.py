@@ -33,6 +33,7 @@ def main(argv):
   assert os.path.exists(FLAGS.model_file)
   assert os.path.exists(FLAGS.plan)
   assert FLAGS.model_file.endswith('pt')
+  assert FLAGS.fen
   if FLAGS.device:
     device = FLAGS.device
   else:
@@ -67,7 +68,7 @@ def main(argv):
       ar.append(logit)
     sm = softmax(np.array(ar))
     for i, m in enumerate(mml):
-      print(f'{i:2d} | {m.uci():6s} | {board.san(m):6s} | {100.0*sm[i]:.0f}')
+      print(f'{i:2d} | {m.uci():6s} | {board.san(m):6s} | {100.0*sm[i]:.1f}')
 
 
   #ds = MyDataset(FLAGS.eval)
