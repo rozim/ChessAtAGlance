@@ -3,12 +3,12 @@
 batch_size = 1024
 
 [model]
-n_channels = 20
-n_blocks = 10
+n_channels = 128
+n_blocks = 20
 n_choke = 1024
 
 [train]
 
-lr = 1e-3
+lr = 5e-3
 loss_stale = 0
 acc_stale = 10

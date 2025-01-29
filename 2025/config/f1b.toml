@@ -9,6 +9,6 @@ n_choke = 1024
 
 [train]
 
-lr = 1e-3
+lr = 1e-4
 loss_stale = 0
 acc_stale = 10
