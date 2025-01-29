@@ -10,7 +10,7 @@ from absl import app, flags
 FLAGS = flags.FLAGS
 flags.DEFINE_string('input', '', '*.txt or *.txt.gz')
 flags.DEFINE_string('output', '', '*.txt or *.txt.gz')
-flags.DEFINE_integer('buffer_size', 1_000_000, '')
+flags.DEFINE_integer('buffer_size', 10_000_000, '')
 
 def smart_output(fn, mode='w'):
   if fn.endswith('.gz'):
@@ -22,6 +22,7 @@ def smart_input(fn, mode='r'):
   if fn.endswith('.gz'):
     return gzip.open(fn, mode)
   return open(fn, mode)
+
 
 def shuffle_large_file(input_file: str, output_file: str, buffer_size=1000):
   """
