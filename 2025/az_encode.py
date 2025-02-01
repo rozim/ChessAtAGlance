@@ -4,21 +4,26 @@ from absl import app
 import numpy as np
 import chess
 
+import numpy.typing as npt
+
 KNIGHT_MOVEMENT_DXDY_TO_IDX = {(2, -1): 0, (2, 1): 1, (1, -2): 2, (-1, -2): 3, (-2, 1): 4, (-2, -1): 5, (-1, 2): 6, (1, 2): 7}
 KNIGHT_MOVEMENT_IDX_TO_DXDY = [(2, -1), (2, 1), (1, -2), (-1, -2), (-2, 1), (-2, -1), (-1, 2), (1, 2)]
 
 ACTIONS = (8 * 8 * 73)
+BOARD_SHAPE = (8, 8, 20)
 
-def encode_board(board: chess.Board):
+_ENCODER_DICT = {
+  "R": 0, "N": 1, "B": 2, "Q": 3, "K": 4, "P": 5,
+  "r": 6, "n": 7, "b": 8, "q": 9, "k": 10, "p": 11}
+
+_DECODER_DICT = {0: "R", 1: "N", 2: "B", 3: "Q", 4: "K", 5: "P", 6: "r", 7: "n", 8: "b", 9: "q", 10: "k", 11: "p"}
+
+def encode_board(board: chess.Board) -> npt.NDArray[np.int64]:
     encoded = np.zeros([8, 8, 20], dtype=int)
-    encoder_dict = {
-        "R": 0, "N": 1, "B": 2, "Q": 3, "K": 4, "P": 5,
-        "r": 6, "n": 7, "b": 8, "q": 9, "k": 10, "p": 11
-    }
 
     for square, piece in board.piece_map().items():
         i, j = chess.square_rank(square), chess.square_file(square)
-        encoded[i, j, encoder_dict[piece.symbol()]] = 1
+        encoded[i, j, _ENCODER_DICT[piece.symbol()]] = 1
 
     encoded[:, :, 12] = board.turn == chess.WHITE
 
@@ -36,14 +41,12 @@ def encode_board(board: chess.Board):
 
     return encoded
 
-def decode_board(encoded):
-    decoder_dict = {0: "R", 1: "N", 2: "B", 3: "Q", 4: "K", 5: "P", 6: "r", 7: "n", 8: "b", 9: "q", 10: "k", 11: "p"}
-
+def decode_board(encoded: np.ndarray) -> chess.Board:
     board = chess.Board.empty()
 
     piece_positions = np.argwhere(encoded[:, :, :12] == 1)
     for i, j, k in piece_positions:
-        board.set_piece_at(chess.square(j, i), chess.Piece.from_symbol(decoder_dict[k]))
+        board.set_piece_at(chess.square(j, i), chess.Piece.from_symbol(_DECODER_DICT[k]))
 
 
     board.turn = chess.WHITE if encoded[0, 0, 12] == 1 else chess.BLACK
@@ -60,7 +63,6 @@ def decode_board(encoded):
     board.fullmove_number = int(encoded[0, 0, 17])
     board.halfmove_clock = int(encoded[0, 0, 18])
 
-
     for i in [2, 5]:
         for j in range(8):
             if encoded[i, j, 19]:
@@ -68,7 +70,8 @@ def decode_board(encoded):
                 board.ep_square = ep_square
     return board
 
-def encode_action(move, board):
+
+def encode_action(move, board) -> npt.NDArray[np.int64]:
     from_square = move.from_square
     to_square = move.to_square
     promotion = move.promotion
@@ -109,7 +112,8 @@ def encode_action(move, board):
 
     return encoded
 
-def decode_action(encoded: int, board: chess.Board):
+
+def decode_action(encoded: int, board: chess.Board) -> chess.Move:
     encoded_array = np.zeros(8 * 8 * 73, dtype=int)
     encoded_array[encoded] = 1
     encoded_array = encoded_array.reshape(8, 8, 73)
