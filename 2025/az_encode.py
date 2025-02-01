@@ -7,7 +7,9 @@ import chess
 KNIGHT_MOVEMENT_DXDY_TO_IDX = {(2, -1): 0, (2, 1): 1, (1, -2): 2, (-1, -2): 3, (-2, 1): 4, (-2, -1): 5, (-1, 2): 6, (1, 2): 7}
 KNIGHT_MOVEMENT_IDX_TO_DXDY = [(2, -1), (2, 1), (1, -2), (-1, -2), (-2, 1), (-2, -1), (-1, 2), (1, 2)]
 
-def encode_board(board):
+ACTIONS = (8 * 8 * 73)
+
+def encode_board(board: chess.Board):
     encoded = np.zeros([8, 8, 20], dtype=int)
     encoder_dict = {
         "R": 0, "N": 1, "B": 2, "Q": 3, "K": 4, "P": 5,
