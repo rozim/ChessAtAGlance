@@ -36,11 +36,12 @@ class ConvBlock(nn.Module):
   def __init__(self):
     super().__init__()
     self.action_size = 8 * 8 * 73
-    self.conv1 = nn.Conv2d(20, 256, 3, stride=1, padding=1)
+    self.conv1 = nn.Conv2d(20, 256, 3, stride=1, padding='same')
     self.bn1 = nn.BatchNorm2d(256)
 
   def forward(self, s):
-    s = s.view(-1, 20, 8, 8)  # batch_size x channels x board_x x board_y
+    ##### old use of view?
+    ##### s = s.view(-1, 20, 8, 8)  # batch_size x channels x board_x x board_y
     s = F.relu(self.bn1(self.conv1(s)))
     return s
 
@@ -49,10 +50,10 @@ class ResBlock(nn.Module):
   def __init__(self, inplanes=256, planes=256, stride=1):
     super().__init__()
     self.conv1 = nn.Conv2d(inplanes, planes, kernel_size=3, stride=stride,
-                           padding=1, bias=False)
+                           padding='same', bias=False)
     self.bn1 = nn.BatchNorm2d(planes)
     self.conv2 = nn.Conv2d(planes, planes, kernel_size=3, stride=stride,
-                           padding=1, bias=False)
+                           padding='same', bias=False)
     self.bn2 = nn.BatchNorm2d(planes)
 
   def forward(self, x):
@@ -104,7 +105,7 @@ class AzModel(nn.Module):
     for block in self.res_blocks:
       s = block(s)
     s = self.outblock(s)
-    return s
+    return s # policy, value
 
 
 # class ChessLoss(nn.Module):
