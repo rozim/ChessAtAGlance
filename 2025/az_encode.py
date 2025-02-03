@@ -48,7 +48,6 @@ def decode_board(encoded: np.ndarray) -> chess.Board:
     for i, j, k in piece_positions:
         board.set_piece_at(chess.square(j, i), chess.Piece.from_symbol(_DECODER_DICT[k]))
 
-
     board.turn = chess.WHITE if encoded[0, 0, 12] == 1 else chess.BLACK
 
     if encoded[0, 0, 13]:
@@ -106,6 +105,7 @@ def encode_action(move, board) -> npt.NDArray[np.int64]:
         elif abs(dx) == 1 and dy == 1:
             idx = 70 + underpromotion_dict[promotion]
 
+    # TBD: replace with 1 liner (8 * from_row + from_col) * ... + idx?
     encoded[from_row, from_col, idx] = 1
     encoded = encoded.reshape(-1)
     encoded = np.argmax(encoded)
@@ -178,7 +178,7 @@ def main(_):
   b = chess.Board()
   for m in b.legal_moves:
     a = encode_action(m, b)
-    print(m, a)
+    print(m, a, a.shape)
   print()
   print('crazy')
   b = chess.Board(crazy)

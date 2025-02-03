@@ -50,6 +50,7 @@ class AzEncodeTest(absltest.TestCase):
         assert a not in already1
         already1.add(a)
         assert type(a) == np.int64
+        assert a.dtype == np.int64
         m2 = decode_action(a, b)
         assert m2 not in already2
         already2.add(m2)
