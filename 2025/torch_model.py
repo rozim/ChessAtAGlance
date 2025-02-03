@@ -52,6 +52,13 @@ class MySimpleModel(nn.Module):
     for block in range(mplan.n_blocks):
       setattr(self, f'res_{block}', ResBlock(n_channels=mplan.n_channels))
 
+
+    # self.project_flatten = nn.Conv2d(in_channels=mplan.n_channels,
+    #                                  out_channels=mplan.n_channels,
+    #                          kernel_size=1, # 1x1
+    #                          padding='same',
+    #                          bias=False)
+
     self.flatten = nn.Flatten()
     self.logits = nn.LazyLinear(1968)
 
