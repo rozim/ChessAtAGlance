@@ -1,0 +1,23 @@
+import zlib
+import pickle
+import sqlitedict
+
+def my_encode(obj):
+  return zlib.compress(pickle.dumps(obj, pickle.HIGHEST_PROTOCOL))
+
+
+def my_decode(obj):
+  return pickle.loads(zlib.decompress(bytes(obj)))
+
+def my_json_encode(obj):
+  return zlib.compress(json.dumps(obj).encode('utf-8'))
+
+
+def my_json_decode(obj):
+  return json.loads(zlib.decompress(bytes(obj)))
+
+    dbio = sqlitedict.open(FLAGS.sqlite_out,
+                           flag='c',
+                           timeout=60,
+                           encode=my_encode,
+                           decode=my_decode)
