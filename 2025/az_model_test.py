@@ -1,6 +1,6 @@
 from absl.testing import absltest
 
-from az_model import AzModel
+from az_model import AzModel, AzModelConfig
 from az_encode import *
 import chess
 import numpy as np
@@ -9,7 +9,15 @@ import torch
 
 class AzModelTest(absltest.TestCase):
   def test_print(self):
-    m = AzModel()
+    config = AzModelConfig()
+    print(config)
+    m = AzModel(config)
+    print(m)
+
+  def test_config(self):
+    config = AzModelConfig(num_channels=7, num_blocks=3)
+    print(config)
+    m = AzModel(config)
     print(m)
 
   def test_with_encoded_board(self):
@@ -18,7 +26,7 @@ class AzModelTest(absltest.TestCase):
     batch = np.expand_dims(enc, axis=0)    # 1, 20, 8, 8
     print('shape', batch.shape)
     batch = torch.tensor(batch).float()
-    model = AzModel()
+    model = AzModel(AzModelConfig())
     policy, value = model(batch)
 
     self.assertEqual(policy.shape, (1, 4672))

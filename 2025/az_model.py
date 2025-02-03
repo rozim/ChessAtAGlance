@@ -1,43 +1,26 @@
 # Based on https://github.com/zach1502/BetaChess/tree/main
-import os
-import json
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-import torch.optim as optim
-import random
-import pickle
+
 import numpy as np
-from torch.utils.data import Dataset, DataLoader
+import dataclasses
 
 
 
-NUM_RESIDUAL_BLOCKS = 4
-BATCH_SIZE = 32
-PATIENCE = 128
-PRINT_INTERVAL = 32
-LEARNING_RATE = 0.03
-NUM_EPOCHS = 2048
+@dataclasses.dataclass
+class AzModelConfig:
+  num_blocks: int = 4
+  num_channels: int = 256
 
-
-class BoardData(Dataset):
-  def __init__(self, dataset):  # dataset = np.array of (s, p, v)
-    self.X = dataset[:, 0]
-    self.y_p, self.y_v = dataset[:, 1], dataset[:, 2]
-
-  def __len__(self):
-    return len(self.X)
-
-  def __getitem__(self, idx):
-    return self.X[idx].transpose(2, 0, 1), self.y_p[idx], self.y_v[idx]
 
 
 class ConvBlock(nn.Module):
-  def __init__(self):
+  def __init__(self, config: AzModelConfig):
     super().__init__()
     self.action_size = 8 * 8 * 73
-    self.conv1 = nn.Conv2d(20, 256, 3, stride=1, padding='same')
-    self.bn1 = nn.BatchNorm2d(256)
+    self.conv1 = nn.Conv2d(20, config.num_channels, 3, stride=1, padding='same')
+    self.bn1 = nn.BatchNorm2d(config.num_channels)
 
   def forward(self, s):
     ##### old use of view?
@@ -47,12 +30,14 @@ class ConvBlock(nn.Module):
 
 
 class ResBlock(nn.Module):
-  def __init__(self, inplanes=256, planes=256, stride=1):
+  def __init__(self, config: AzModelConfig):
     super().__init__()
-    self.conv1 = nn.Conv2d(inplanes, planes, kernel_size=3, stride=stride,
+    inplanes = config.num_channels
+    planes = config.num_channels
+    self.conv1 = nn.Conv2d(inplanes, planes, kernel_size=3, stride=1,
                            padding='same', bias=False)
     self.bn1 = nn.BatchNorm2d(planes)
-    self.conv2 = nn.Conv2d(planes, planes, kernel_size=3, stride=stride,
+    self.conv2 = nn.Conv2d(planes, planes, kernel_size=3, stride=1,
                            padding='same', bias=False)
     self.bn2 = nn.BatchNorm2d(planes)
 
@@ -84,7 +69,7 @@ class OutBlock(nn.Module):
     v = F.relu(self.bn(self.conv(s)))  # value head
     v = v.view(-1, 8 * 8)  # batch_size X channel X height X width
     v = F.relu(self.fc1(v))
-    v = torch.tanh(self.fc2(v))
+    v = torch.tanh(self.fc2(v)) # range: (-1, 1)
 
     p = F.relu(self.bn1(self.conv1(s)))  # policy head
     p = p.view(-1, 8 * 8 * 128)
@@ -94,10 +79,10 @@ class OutBlock(nn.Module):
 
 
 class AzModel(nn.Module):
-  def __init__(self):
+  def __init__(self, config: AzModelConfig):
     super().__init__()
-    self.conv = ConvBlock()
-    self.res_blocks = nn.ModuleList([ResBlock() for _ in range(NUM_RESIDUAL_BLOCKS)])
+    self.conv = ConvBlock(config)
+    self.res_blocks = nn.ModuleList([ResBlock(config) for _ in range(config.num_blocks)])
     self.outblock = OutBlock()
 
   def forward(self, s):
